@@ -6,16 +6,18 @@ import threading
 from types import *
 from Validation_Suite import *
 
-	
-'''! calls shell mbedhtrun which flashes devices specified
-@param mount the mount point of device e.g. E:/
-@param serial the serial port number e.g. COM3
-@param file the name of the file being flashed in the same directory
-@param device the device type e.g. NRF51822
+TIMEOUT = 30
+
+'''! Calculates if inputs are with approximately equal to each other within a range reutrn Boolean
+@param x first input
+@param y second input
+@param range the range tolerance
 '''
-def flashDevice(mount,serial,file,device):
-	subprocess.call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run'])
-	return 
+def approxEqual(x, y, range):
+	if abs(x-y) <= range:
+		return True
+	else:
+		return False
 
 '''! tests if the iBeacon service works and prints when an advert is detected
 @param aSer the serial object for device A
@@ -53,6 +55,10 @@ def detectTest(aSer,bSer):
 		if (time.time() - time1 > TIMEOUT):
 			return False
 
+'''! Test to set and get the MAC address 
+@param aSer the serial object for device A
+@param bSer the serial object for device B
+'''
 def setAddrTest(aSer,bSer):
 	setAddrError = aSer.readline()
 	getAddrError = aSer.readline()
@@ -97,15 +103,11 @@ def changeAdTest(aSer,bSer):
 			if approxEqual(uptime,0.5,0.2):
 				counter1 = counter1 + 1
 				avg1 = avg1 + uptime
-			#elif approxEqual(uptime,1,0.2):
-			#	counter2 = counter2 + 1
-			#	avg2 = avg2 + uptime
 			print 'PC: Time interval: ' + str(uptime)
 			time2 = time.time()
 			if counter1 == 5:
 				avg1 = avg1/counter1
-				#avg2 = avg2/counter2
-				if approxEqual(avg1,0.5,0.05):# and approxEqual(avg2,1.0,0.05):
+				if approxEqual(avg1,0.5,0.05):
 					return True
 				else:
 					return False

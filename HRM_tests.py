@@ -6,6 +6,8 @@ import threading
 from types import *
 from Validation_Suite import *
 
+TIMEOUT = 30
+
 '''! function be used in seperate thread to monitor another serial port in a seperate thread to stop blocking
 @param aSer the serial port to be monitored
 @param str string which is output to the console as well at the port input to identify which thread/device
@@ -18,7 +20,7 @@ def aSerialRead(aSer, str):
 		if 'Connected' in output:
 			return
 
-'''! test function to monitor time between advertisements
+'''! test function to monitor time between advertisements, enables certain tests to be able to run, only runnable when devices are disconnected
 @param aSer serial port of device A
 @param bSer serial port of device B
 '''
@@ -38,8 +40,7 @@ def connectTest(aSer,bSer):
 		if time.time() - time1 > TIMEOUT:
 			return False
 
-
-'''! tests setDeviceName and getDeviceName functions
+'''! tests setDeviceName and getDeviceName functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
 def deviceNameTest(aSer,bSer):
@@ -59,7 +60,7 @@ def deviceNameTest(aSer,bSer):
 	else:
 		return False
 
-'''! tests setAppearance and getAppearance functions
+'''! tests setAppearance and getAppearance functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
 def appearanceTest(aSer,bSer):
@@ -79,6 +80,10 @@ def appearanceTest(aSer,bSer):
 		print outputB
 		return False
 
+'''! tests the get/setPreferredConnectionParams functions, only runnable when devices are disconnected
+@param aSer the serial port for device A
+@param bSer teh serial port for device B
+'''
 def connParamTest(aSer,bSer):
 	getConn = aSer.readline()
 	if 'Device must be disconnected' in getConn:
@@ -102,12 +107,10 @@ def connParamTest(aSer,bSer):
 	else:
 		return False
 	
-'''! test for Heart rate monitor, one device connects and reads characteristic, both devices print value
-	calculates difference between ticks and makes sure its constant 
+'''! test to read device A's HRM characteristic from device B, only runnable when devices are connected
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
 '''
-
 def readTest(aSer,bSer):
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
@@ -122,6 +125,10 @@ def readTest(aSer,bSer):
 		print 'MBED[B]: ' + outputB
 		return False
 
+'''! test to write "1" to device A's LED characteristic from device B and read back to verify, only runnable when devices are connected
+@param aSer the serial object for device A
+@param bSer the serial object for device B 
+'''
 def writeTest(aSer,bSer):
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
@@ -139,6 +146,10 @@ def writeTest(aSer,bSer):
 		print 'MBED[B]: ' + outputB
 		return False
 
+'''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
+@param aSer the serial object for device A
+@param bSer the serial object for device B 
+'''
 def disconnectTest(aSer,bSer):
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB:

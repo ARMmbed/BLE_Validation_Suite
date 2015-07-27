@@ -31,7 +31,6 @@ def flashDevice(mount,serial,file,device):
 	subprocess.call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run'])
 	return 
 
-
 '''! function to run tests for iBeacon
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
@@ -94,6 +93,10 @@ def iBeaconTest(aSer,bSer):
 	for i in failList:
 			print i + ' ',
 
+'''! the test environment for connecting devices and characteristic read/write tests
+@param aSer the serial object for device A
+@param bSer the serial object for device B
+'''
 def HRMTest(aSer,bSer):
 	counter = 0
 	Pass = True
@@ -140,8 +143,7 @@ def HRMTest(aSer,bSer):
 		else:
 			if testInput not in passList:
 				failList = (list(set(failList + [testInput])))
-		
-
+				
 	print 'SUCCESSFUL TESTS: {0}/{1}'.format(len(passList),len(passList + failList))
 	print 'TESTS PASSED: ',
 	for i in passList:
