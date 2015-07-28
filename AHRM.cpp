@@ -21,13 +21,12 @@
 #include "ble/services/DeviceInformationService.h"
 #include "LEDService.h"
 
-#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(X) (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
+#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{sucess}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE  ble;
 DigitalOut led1(LED1);
 Gap::Address_t address;
-Gap::AddressType_t *addressType;
 
 const static char     DEVICE_NAME[]        = "HRMTEST";
 static const uint16_t uuid16_list[]        = {GattService::UUID_HEART_RATE_SERVICE,
@@ -35,29 +34,23 @@ static const uint16_t uuid16_list[]        = {GattService::UUID_HEART_RATE_SERVI
                                               LEDService::LED_SERVICE_UUID};
 static volatile bool  triggerSensorPolling = false;
 
+void periodicCallback(void)
+{
+    led1 = !led1; /* Do blinky on LED1 while we're waiting for BLE events */
+}
+
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
     ble.gap().startAdvertising(); // restart advertising
 }
 
-void periodicCallback(void)
-{
-    led1 = !led1; /* Do blinky on LED1 while we're waiting for BLE events */
-
-    /* Note that the periodicCallback() executes in interrupt context, so it is safer to do
-     * heavy-weight sensor polling from the main thread. */
-}
-
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
-    printf("Connected to: %d:%d:%d:%d:%d:%d\n", params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
-    
+    printf("Connected to: %d:%d:%d:%d:%d:%d\n",
+        params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
 }
 
-void dataReadCallback(const GattReadCallbackParams *params){
-        printf("%d\n",  params->data[1]);
-} 
-
-void testDeviceName(){
+void testDeviceName()
+{
     if (ble.gap().getState().connected){
         printf("Device must be disconnected\n");
         return;
@@ -74,12 +67,13 @@ void testDeviceName(){
     }
     printf("\r\n");
     for (int i = 0; i < 8; i++){
-        printf("%02x ", deviceNameIn[i]);    
+        printf("%02x ", deviceNameIn[i]);
     }
     printf("\r\n");
 }
 
-void testAppearance(){
+void testAppearance()
+{
     if ((ble.gap().getState().connected)){
         printf("Device must be disconnected\n");
         return;
@@ -90,13 +84,15 @@ void testAppearance(){
     ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
     wait(0.5);
     printf("%d\r\n",appearance);
-} 
+}
 
-void connParams(){
+void connParams()
+{
     if ((ble.gap().getState().connected)){
         printf("Device must be disconnected\n");
         return;
     }
+
     Gap::ConnectionParams_t params;
     Gap::ConnectionParams_t paramsOut = {50,500,0,500};
     Gap::ConnectionParams_t temp;
@@ -108,15 +104,18 @@ void connParams(){
     printf("%d\n", params.slaveLatency);
     printf("%d\n", params.connectionSupervisionTimeout);
     ble.gap().setPreferredConnectionParams(&temp);
-    
-} 
 
-void commandInterpreter(void){
-    char command[50];
-    while(1){
+}
+
+void commandInterpreter(void)
+{
+    const static size_t MAX_SIZEOF_COMMAND;
+    while (true) {
+        char command[MAX_SIZEOF_COMMAND];
         scanf("%s", command);
-        if (!strcmp(command, "setDeviceName")) testDeviceName();
-        else if (!strcmp(command, "setAppearance")) testAppearance();
+
+        if (!strcmp(command, "setDeviceName"))             testDeviceName();
+        else if (!strcmp(command, "setAppearance"))        testAppearance();
         else if (!strcmp(command, "testConnectionParams")) connParams();
     }
 }
@@ -126,14 +125,16 @@ int main(void)
     led1 = 1;
     Ticker ticker;
     ticker.attach(periodicCallback, 1); // blink LED every second
-    
+
     ASSERT_NO_FAILURE(ble.init());
+
     ble.gap().onDisconnection(disconnectionCallback);
     ble.gap().onConnection(connectionCallback);
+
     /* Setup primary service. */
     uint8_t hrmCounter = 100; // init HRM to 100bps
     HeartRateService hrService(ble, hrmCounter, HeartRateService::LOCATION_FINGER);
-    
+
     bool initialValueForLEDCharacteristic = false;
     LEDService ledService(ble, initialValueForLEDCharacteristic);
 
@@ -149,38 +150,17 @@ int main(void)
     ble.gap().setAdvertisingInterval(1000); /* 1000ms */
 
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
-    ASSERT_NO_FAILURE(ble.gap().getAddress(addressType, address));
-    printf("{{success}}" "\n" "{{end}}" "\n");
-    int x;
-    scanf("%d" , &x);
-    printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]);
-    commandInterpreter();
-/*
-    scanf("%d", &x);
-    testDeviceName();
-    //printf("%d\n",ble.gattServer().onDataRead(dataReadCallback));
-    scanf("%d", &x);
-    testAppearance();
-    scanf("%d", &x);
-    connParams();
-    // infinite loop
-    while (1) {
-        // check for trigger from periodicCallback()
-        if (triggerSensorPolling && ble.getGapState().connected) {
-            triggerSensorPolling = false;
 
-            // Do blocking calls or whatever is necessary for sensor polling.
-            // In our case, we simply update the HRM measurement.
-            hrmCounter++;
-            //  100 <= HRM bps <=175
-            if (hrmCounter == 175) {
-                hrmCounter = 100;
-            }
-            // update bps
-            hrService.updateHeartRate(hrmCounter);
-        } else {
-            ble.waitForEvent(); // low power wait for event
-        }
-    }
-*/
+    Gap::AddressType_t addressType;
+    ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
+
+    printf("{{success}}\n{{end}}\n"); /* hand over control from the host test to the python script. */
+
+    unsigned synchronize;
+    scanf("%u", &synchronize);
+
+    /* write out the MAC address to allow the second level python script to target this device. */
+    printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]);
+
+    commandInterpreter();
 }
