@@ -159,6 +159,11 @@ def HRMTest(aSer,bSer):
 '''
 def transferAddr(aSer,bSer):
 	aSer.write('1\n')
+	
+	basicAssumptions = aSer.readline()
+	if 'failed' in basicAssumptions:
+		print 'Basic Assumptions failed'
+		sys.exit()
 
 	getAddressError = aSer.readline()
 	if '{{failure}}' in getAddressError:
@@ -211,11 +216,10 @@ if __name__ == "__main__":
 	bSer = serial.Serial(port,timeout = 5)
 
 	transferAddr(aSer,bSer)
-	
+
 	if 'iBeacon' in sys.argv[1]:
 		iBeaconTest(aSer,bSer)
 	elif sys.argv[1] == '-HRM':
 		HRMTest(aSer, bSer)
 	else:
 		sys.exit()
-		

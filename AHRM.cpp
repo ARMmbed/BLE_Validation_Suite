@@ -25,7 +25,6 @@
 #define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{sucess}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE  ble;
-DigitalOut led1(LED1);
 Gap::Address_t address;
 
 const static char     DEVICE_NAME[]        = "HRMTEST";
@@ -34,10 +33,6 @@ static const uint16_t uuid16_list[]        = {GattService::UUID_HEART_RATE_SERVI
                                               LEDService::LED_SERVICE_UUID};
 static volatile bool  triggerSensorPolling = false;
 
-void periodicCallback(void)
-{
-    led1 = !led1; /* Do blinky on LED1 while we're waiting for BLE events */
-}
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
@@ -109,7 +104,7 @@ void connParams()
 
 void commandInterpreter(void)
 {
-    const static size_t MAX_SIZEOF_COMMAND;
+    const static size_t MAX_SIZEOF_COMMAND = 50;
     while (true) {
         char command[MAX_SIZEOF_COMMAND];
         scanf("%s", command);
@@ -120,14 +115,10 @@ void commandInterpreter(void)
     }
 }
 
-int main(void)
+unsigned verifyBasicAssumptions()
 {
-    led1 = 1;
-    Ticker ticker;
-    ticker.attach(periodicCallback, 1); // blink LED every second
-
-    ASSERT_NO_FAILURE(ble.init());
-
+    if(ble.init()) return 1;
+    
     ble.gap().onDisconnection(disconnectionCallback);
     ble.gap().onConnection(connectionCallback);
 
@@ -142,23 +133,32 @@ int main(void)
     DeviceInformationService deviceInfo(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
 
     /* Setup advertising. */
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE));
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, (uint8_t *)uuid16_list, sizeof(uuid16_list)));
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::GENERIC_HEART_RATE_SENSOR));
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)DEVICE_NAME, sizeof(DEVICE_NAME)));
+    if(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE)) return 1;
+    if(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, (uint8_t *)uuid16_list, sizeof(uuid16_list))) return 1;
+    if(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::GENERIC_HEART_RATE_SENSOR)) return 1;
+    if(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)DEVICE_NAME, sizeof(DEVICE_NAME))) return 1;
     ble.gap().setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble.gap().setAdvertisingInterval(1000); /* 1000ms */
 
-    ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    if(ble.gap().startAdvertising()) return 1;
+    
+    return 0;
+}
 
-    Gap::AddressType_t addressType;
-    ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
-
+int main(void)
+{
+    unsigned errorCode = verifyBasicAssumptions();
+    
     printf("{{success}}\n{{end}}\n"); /* hand over control from the host test to the python script. */
-
+    
     unsigned synchronize;
     scanf("%u", &synchronize);
-
+    
+    errorCode ? printf("Initial basic assumptions failed\r\n") : printf("Initial basic assumptions success\r\n");
+    
+    Gap::AddressType_t addressType;
+    ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
+    
     /* write out the MAC address to allow the second level python script to target this device. */
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]);
 

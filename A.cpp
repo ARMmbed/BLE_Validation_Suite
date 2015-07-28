@@ -180,34 +180,42 @@ void commandInterpreter(void)
     }
 }
 
-void verifyBasicAssumptions()
+unsigned verifyBasicAssumptions()
 {
-    ASSERT_NO_FAILURE(ble.init());
+    if(ble.init()){
+        return 1;    
+    }
 
     /* Read in the MAC address of this peripheral. The corresponding central will be
      * commanded to co-ordinate with this address. */
     Gap::AddressType_t addressType;
     Gap::Address_t     address;
-    ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address)); /* TODO: if this fails, then bail out with a useful report. */
+    if(ble.gap().getAddress(&addressType, address)){
+        return 1;   
+    } /* TODO: if this fails, then bail out with a useful report. */
 
     /* Check that the state is one of the valid values. */
     Gap::GapState_t state = ble.gap().getState();
     if ((state.connected == 1) || (state.advertising == 1)) {
         printf("{{failure}} ble.gap().getState() at line %u\r\n", __LINE__); /* writing out {{failure}} will halt the host test runner. */
+        return 1;
     } else {
         printf("{{success}}\r\n");
+        return 0;
     }
 }
 
 int main(void)
 {
-    verifyBasicAssumptions();
+    unsigned errorCode = verifyBasicAssumptions();
 
     printf("{{end}}\n"); // tells mbedhtrun to finish and hand control over to the second level python script.
 
     /* Synchronize with the second python script--wait for something to arrive on the console. */
     unsigned syncer;
     scanf("%d",&syncer);
+    
+    errorCode ? printf("Initial basic assumptions failed\r\n") : printf("Initial basic assumptions success\r\n");
 
     /* Refetch the address to write out to the console. */
     Gap::Address_t     address;
