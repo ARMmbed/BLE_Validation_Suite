@@ -195,7 +195,7 @@ if __name__ == "__main__":
 		flashDevice(aMount, aPort, 'A_NRF51822.hex', aName)
 		flashDevice(bMount, bPort, 'B_NRF51822.hex', aName)
 	elif sys.argv[1] == '-iBeaconNUC':
-		flashDevice(aMount, aPort, 'A_NUC_NUCLEO_F401RE.bin', aName)#'NUCLEO_F401RE')
+		flashDevice(aMount, aPort, 'A_NUC_NUCLEO_F411RE.bin', aName)#'NUCLEO_F401RE')
 		flashDevice(bMount, bPort, 'B_NRF51822.hex', bName)
 	elif sys.argv[1] == '-HRM':
 		flashDevice(aMount, aPort, 'AHRM_NRF51822.hex', aName)

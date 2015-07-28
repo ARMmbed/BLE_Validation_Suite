@@ -20,8 +20,8 @@
 #include "ble/DiscoveredService.h"
 #define DUMP_ADV_DATA 0
 
-#define BLE_CHECK(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define BLE_EQUAL(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
+#define CHECK_EQUALS(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
 
 BLE                 ble;
 Gap::Address_t      address;
@@ -70,9 +70,9 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
     if (params->role == Gap::CENTRAL) {
 //        ble.gattClient().onServiceDiscoveryTermination(discoveryTerminationCallback);
         deviceAHandle = params->handle;
-        BLE_CHECK(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
-        //BLE_CHECK(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0x180d, 0x2a37));
-        //BLE_CHECK(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0xA000, 0xA001));
+        ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
+        //ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0x180d, 0x2a37));
+        //ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0xA000, 0xA001));
     }
 }
 
@@ -88,19 +88,18 @@ void triggerToggledWrite(const GattReadCallbackParams *response) {
 
 void connectTest(){
     if (!(ble.gap().getState().connected)){
-        BLE_CHECK(ble.gap().connect(address,Gap::ADDR_TYPE_RANDOM_STATIC,NULL,NULL));
+        ASSERT_NO_FAILURE(ble.gap().connect(address,Gap::ADDR_TYPE_RANDOM_STATIC,NULL,NULL));
     }
     else printf("Devices already connected\n");
 }
 
 void readTest(){
-    myled = 0;
     if (!(ble.gap().getState().connected)){
         printf("Devices must be connected before this test can be run\n");
         return;
     }
     if (HRMFound){
-        BLE_CHECK(HRMCharacteristic.read());    
+        ASSERT_NO_FAILURE(HRMCharacteristic.read());    
     }
 }
 void writeTest(){
@@ -110,15 +109,15 @@ void writeTest(){
     }
     uint8_t write_value = 1;
     if (LEDFound){
-        BLE_CHECK(LEDCharacteristic.write(sizeof(write_value),&write_value));
+        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value));
         wait(0.5);
-        BLE_CHECK(LEDCharacteristic.read());
+        ASSERT_NO_FAILURE(LEDCharacteristic.read());
     }
 }
 
 void disconnectTest(){
     if ((ble.gap().getState().connected)){
-        BLE_CHECK(ble.gap().disconnect(deviceAHandle, Gap::REMOTE_USER_TERMINATED_CONNECTION));
+        ASSERT_NO_FAILURE(ble.gap().disconnect(deviceAHandle, Gap::REMOTE_USER_TERMINATED_CONNECTION));
     }
     else printf("Devices not connected\n");        
 }
@@ -136,7 +135,6 @@ void commandInterpreter(){
 
 int main(void)
 {
-    myled = 1;
     printf("{{success}}" "\n" "{{end}}" "\n");
     ble.init();
     scanf("%hhu",&address[0]);
@@ -147,8 +145,8 @@ int main(void)
     scanf("%hhu",&address[5]);
     
     
-    BLE_CHECK(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
-    BLE_CHECK(ble.gap().startScan(advertisementCallback));
+    ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
+    ASSERT_NO_FAILURE(ble.gap().startScan(advertisementCallback));
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(triggerToggledWrite);
     

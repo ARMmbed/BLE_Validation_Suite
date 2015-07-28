@@ -21,8 +21,8 @@
 #include "ble/services/DeviceInformationService.h"
 #include "LEDService.h"
 
-#define BLE_CHECK(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define BLE_EQUAL(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
+#define CHECK_EQUALS(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
 
 BLE  ble;
 DigitalOut led1(LED1);
@@ -65,9 +65,9 @@ void testDeviceName(){
     uint8_t deviceName[10];
     uint8_t deviceNameIn[] = {0x4A, 0x4F, 0x53, 0x48, 0x54, 0x45, 0x53, 0x54, 0x00};
     unsigned length = 10;
-    BLE_CHECK(ble.gap().setDeviceName(deviceNameIn));
+    ASSERT_NO_FAILURE(ble.gap().setDeviceName(deviceNameIn));
     wait(0.5);
-    BLE_CHECK(ble.gap().getDeviceName(deviceName, &length));
+    ASSERT_NO_FAILURE(ble.gap().getDeviceName(deviceName, &length));
     wait(0.5);
     for (int i = 0; i < length; i++){
         printf("%02x ", deviceName[i]);
@@ -85,9 +85,9 @@ void testAppearance(){
         return;
     }
     GapAdvertisingData::Appearance appearance;
-    BLE_CHECK(ble.gap().setAppearance(GapAdvertisingData::GENERIC_PHONE));
+    ASSERT_NO_FAILURE(ble.gap().setAppearance(GapAdvertisingData::GENERIC_PHONE));
     wait(0.5);
-    BLE_CHECK(ble.gap().getAppearance(&appearance));
+    ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
     wait(0.5);
     printf("%d\r\n",appearance);
 } 
@@ -100,8 +100,8 @@ void connParams(){
     Gap::ConnectionParams_t params;
     Gap::ConnectionParams_t paramsOut = {50,500,0,500};
     Gap::ConnectionParams_t temp;
-    BLE_CHECK(ble.gap().getPreferredConnectionParams(&temp));
-    BLE_CHECK(ble.gap().setPreferredConnectionParams(&paramsOut));
+    ASSERT_NO_FAILURE(ble.gap().getPreferredConnectionParams(&temp));
+    ASSERT_NO_FAILURE(ble.gap().setPreferredConnectionParams(&paramsOut));
     ble.gap().getPreferredConnectionParams(&params);
     printf("%d\n", params.minConnectionInterval);
     printf("%d\n", params.maxConnectionInterval);
@@ -127,7 +127,7 @@ int main(void)
     Ticker ticker;
     ticker.attach(periodicCallback, 1); // blink LED every second
     
-    BLE_CHECK(ble.init());
+    ASSERT_NO_FAILURE(ble.init());
     ble.gap().onDisconnection(disconnectionCallback);
     ble.gap().onConnection(connectionCallback);
     /* Setup primary service. */
@@ -141,15 +141,15 @@ int main(void)
     DeviceInformationService deviceInfo(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
 
     /* Setup advertising. */
-    BLE_CHECK(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE));
-    BLE_CHECK(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, (uint8_t *)uuid16_list, sizeof(uuid16_list)));
-    BLE_CHECK(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::GENERIC_HEART_RATE_SENSOR));
-    BLE_CHECK(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)DEVICE_NAME, sizeof(DEVICE_NAME)));
+    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE));
+    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, (uint8_t *)uuid16_list, sizeof(uuid16_list)));
+    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::GENERIC_HEART_RATE_SENSOR));
+    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LOCAL_NAME, (uint8_t *)DEVICE_NAME, sizeof(DEVICE_NAME)));
     ble.gap().setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
     ble.gap().setAdvertisingInterval(1000); /* 1000ms */
 
-    BLE_CHECK(ble.gap().startAdvertising());
-    BLE_CHECK(ble.gap().getAddress(addressType, address));
+    ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    ASSERT_NO_FAILURE(ble.gap().getAddress(addressType, address));
     printf("{{success}}" "\n" "{{end}}" "\n");
     int x;
     scanf("%d" , &x);

@@ -16,7 +16,6 @@
 
 #include "mbed.h"
 #include "ble/services/iBeacon.h"
-#include <map>
 #include <string>
 
 #define ASSERT_NO_FAILURE(X) ((X) == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : \

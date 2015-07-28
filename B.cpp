@@ -18,13 +18,11 @@
 #include "BLE.h"
 #define DUMP_ADV_DATA 0
 
-#define BLE_CHECK(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u\r\n", #X, __LINE__);
-#define BLE_EQUAL(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u\r\n", #X, __LINE__);
+#define CHECK_EQUALS(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
 
 BLE        ble;
 uint8_t address[6];
-DigitalOut myled(p21);
-Ticker tick;
 
 
 
@@ -51,23 +49,18 @@ void advertisementCallback(const Gap::AdvertisementCallbackParams_t *params) {
 #endif /* DUMP_ADV_DATA */
 }
 
-void blink(void){
-    myled = !myled;
-}
 
 int main(void)
 {
-    myled = 1;
     printf("{{success}}" "\n" "{{end}}" "\n");
-    tick.attach(blink,1);
     for (int i = 0; i < 6; i++){
         scanf("%hhu",&address[i]);    
     }
     
-    BLE_CHECK(ble.init());
+    ASSERT_NO_FAILURE(ble.init());
 
-    BLE_CHECK(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */, 0, true));
-    BLE_CHECK(ble.gap().startScan(advertisementCallback));
+    ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */, 0, true));
+    ASSERT_NO_FAILURE(ble.gap().startScan(advertisementCallback));
 
  
 }
