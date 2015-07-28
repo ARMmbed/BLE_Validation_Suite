@@ -128,7 +128,7 @@ void commandInterpreter(){
 
 int main(void)
 {
-    printf("{{success}}" "\n" "{{end}}" "\n");
+    printf("{{end}}\n");
     ble.init();
     scanf("%hhu",&address[0]);
     scanf("%hhu",&address[1]);

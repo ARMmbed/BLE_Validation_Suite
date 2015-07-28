@@ -30,6 +30,7 @@ DigitalOut myled(LED1);
 */
 void setupIBeaconTest(void)
 {
+    ble.gap().stopAdvertising();
     /* setup the ibeacon */
     const static uint8_t uuid[] = {0xE2, 0x0A, 0x39, 0xF4, 0x73, 0xF5, 0x4B, 0xC4,
                                    0xA1, 0x2F, 0x17, 0xD1, 0xAD, 0x07, 0xA9, 0x61};
@@ -39,11 +40,9 @@ void setupIBeaconTest(void)
     iBeacon ibeacon(ble, uuid, majorNumber, minorNumber, txPower);
 
     ble.gap().setAdvertisingInterval(1000); /* 1000ms. */
-    wait(0.5);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), (uint16_t)1000); /* TODO: what does this return?? */
     
     ble.gap().setAdvertisingTimeout(0);
-    wait(0.5);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
 
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());

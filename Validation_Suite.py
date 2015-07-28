@@ -40,21 +40,24 @@ def iBeaconTest(aSer,bSer):
 	if '{{failure}}' in bleInitCheck:
 		print 'MBED[B]: ' + bleInitCheck,
 		print 'Test cannot continue without ble.init(). Test ending'
+		return
 	setScanParamsCheck = bSer.readline()
 	if '{{failure}}' in setScanParamsCheck:
 		print 'MBED[B]: ' + setScanParamsCheck,
-		print 'Test cannot continue without ble.init(). Test ending'
+		print 'Test cannot continue without setScanParams. Test ending'
+		return
 	startScanCheck = bSer.readline()
 	if '{{failure}}' in startScanCheck:
 		print 'MBED[B]: ' + startScanCheck,
-		print 'Test cannot continue without ble.init(). Test ending'		
-
+		print 'Test cannot continue without startScan. Test ending'		
+		return
 	passList = []
 	failList = []
 
 	testDict = {'setAdvertisingInterval': iBeacon.changeAdTest, 'accumulateAdvertisingPayload': iBeacon.changePayloadTest, 'setAdvertisingTimeout': iBeacon.setTimeoutTest, \
 				'accumulateScanResponse': iBeacon.responseTest, 'iBeaconTest': iBeacon.detectTest, 'setgetAddress': iBeacon.setAddrTest}
 	while True:
+		time.sleep(2)
 		print '\nWhat test? -1 to finish',
 		for i in testDict.keys():
 			print ', ' + i,
@@ -98,8 +101,11 @@ def iBeaconTest(aSer,bSer):
 @param bSer the serial object for device B
 '''
 def HRMTest(aSer,bSer):
-	counter = 0
-	Pass = True
+	setScanParamsOutput = bSer.readline()
+	if '{{failure}}' in setScanParamsOutput:
+		print 'MBED[B]: ' + setScanParamsOutput,
+		print 'Test cannot continue without setScanParams. Test ending'
+		return 
 	passList = []
 	failList = []
 	bSer.write('1\n')
@@ -159,7 +165,7 @@ def HRMTest(aSer,bSer):
 '''
 def transferAddr(aSer,bSer):
 	aSer.write('1\n')
-	
+
 	basicAssumptions = aSer.readline()
 	if 'failed' in basicAssumptions:
 		print 'Basic Assumptions failed'
