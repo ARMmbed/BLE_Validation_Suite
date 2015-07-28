@@ -41,7 +41,7 @@ void setupIBeaconTest(void)
     ble.gap().setAdvertisingInterval(1000); /* 1000ms. */
     wait(0.5);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), (uint16_t)1000); /* TODO: what does this return?? */
-
+    
     ble.gap().setAdvertisingTimeout(0);
     wait(0.5);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
@@ -56,11 +56,9 @@ void setAddrTest(void)
     Gap::AddressType_t addressType;
     Gap::Address_t origAddress;
     ble.gap().getAddress(&addressType, origAddress);
-    wait(0.2); /* TODO: is this necessary? */
 
     const static Gap::Address_t newAddress = {110, 100, 100, 100, 100, 100}; /* A randomly chosen address for assigning to the peripheral. */
     ASSERT_NO_FAILURE(ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, newAddress));
-    wait(0.2);
 
     Gap::Address_t fetchedAddress;
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, fetchedAddress));

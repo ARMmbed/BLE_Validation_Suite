@@ -143,7 +143,7 @@ def HRMTest(aSer,bSer):
 		else:
 			if testInput not in passList:
 				failList = (list(set(failList + [testInput])))
-				
+
 	print 'SUCCESSFUL TESTS: {0}/{1}'.format(len(passList),len(passList + failList))
 	print 'TESTS PASSED: ',
 	for i in passList:
@@ -155,11 +155,15 @@ def HRMTest(aSer,bSer):
 
 '''! transfers MAC address of device A to device B
 @param aSer the serial object for device A
-@param bSer the serial object for device B 
+@param bSer the serial object for device B
 '''
 def transferAddr(aSer,bSer):
 	aSer.write('1\n')
 
+	getAddressError = aSer.readline()
+	if '{{failure}}' in getAddressError:
+		print 'MBED[A]: ' + getAddressError,
+		sys.exit()
 	print 'Reading MAC'
 	MAC = aSer.readline()
 	print 'MAC read'
@@ -173,11 +177,6 @@ def transferAddr(aSer,bSer):
 		
 	print 'MAC written'
 
-'''! function be used in seperate thread to monitor another serial port in a seperate thread to stop blocking
-@param aSer the serial port to be monitored
-@param str string which is output to the console as well at the port input to identify which thread/device
-'''
-			
 if __name__ == "__main__":
 	# DETECTION
 	aPort = getJson(0, 'serial_port')
@@ -219,3 +218,4 @@ if __name__ == "__main__":
 		HRMTest(aSer, bSer)
 	else:
 		sys.exit()
+		

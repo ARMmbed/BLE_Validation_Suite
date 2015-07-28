@@ -116,6 +116,9 @@ def readTest(aSer,bSer):
 	if 'Devices must be connected' in outputB:
 		print 'device must be connected'
 		return False
+	if 'not found' in outputB:
+		print 'HRM Characteristic not found'
+		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB:
 		print 'MBED[B]: ' + outputB,

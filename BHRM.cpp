@@ -47,12 +47,12 @@ void serviceDiscoveryCallback(const DiscoveredService *service) {
 
 void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP) {
     if (characteristicP->getShortUUID() == 0x2a37) { 
-        HRMCharacteristic        = *characteristicP;
-        HRMFound = true;
+        HRMCharacteristic = *characteristicP;
+        HRMFound          = true;
     }
     if (characteristicP->getShortUUID() == 0xA001){
         LEDCharacteristic = *characteristicP;
-        LEDFound = true;   
+        LEDFound          = true;   
     }
 }
 
@@ -89,6 +89,8 @@ void readTest(){
     }
     if (HRMFound){
         ASSERT_NO_FAILURE(HRMCharacteristic.read());    
+    } else{
+        printf("Characteristic not found\r\n");
     }
 }
 void writeTest(){
@@ -101,6 +103,8 @@ void writeTest(){
         ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value));
         wait(0.5);
         ASSERT_NO_FAILURE(LEDCharacteristic.read());
+    } else{
+        printf("Characeristic not found\r\n");
     }
 }
 
