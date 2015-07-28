@@ -25,21 +25,12 @@
 
 BLE                 ble;
 Gap::Address_t      address;
-Gap::AddressType_t *addressType;
 
 DiscoveredCharacteristic HRMCharacteristic;
 bool HRMFound =          false;
 DiscoveredCharacteristic LEDCharacteristic;
 bool LEDFound =          false;
 Gap::Handle_t            deviceAHandle;
-
-void advertisementCallback(const Gap::AdvertisementCallbackParams_t *params) {
-    for (int i = 0; i < 5; i++){
-        if(address[i] != params->peerAddr[i]){
-            return;    
-        }
-    }
-}
 
 void serviceDiscoveryCallback(const DiscoveredService *service) {
     if (service->getUUID().shortOrLong() == UUID::UUID_TYPE_SHORT) {
@@ -68,11 +59,9 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
     printf("Connected to: %d:%d:%d:%d:%d:%d\n", params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]); 
     if (params->role == Gap::CENTRAL) {
-//        ble.gattClient().onServiceDiscoveryTermination(discoveryTerminationCallback);
         deviceAHandle = params->handle;
         ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
-        //ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0x180d, 0x2a37));
-        //ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback, 0xA000, 0xA001));
+        
     }
 }
 
@@ -146,7 +135,6 @@ int main(void)
     
     
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
-    ASSERT_NO_FAILURE(ble.gap().startScan(advertisementCallback));
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(triggerToggledWrite);
     
