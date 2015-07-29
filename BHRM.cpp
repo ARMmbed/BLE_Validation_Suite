@@ -31,8 +31,10 @@ bool HRMFound =          false;
 DiscoveredCharacteristic LEDCharacteristic;
 bool LEDFound =          false;
 Gap::Handle_t            deviceAHandle;
+    
 
-void serviceDiscoveryCallback(const DiscoveredService *service) {
+void serviceDiscoveryCallback(const DiscoveredService *service)
+{
     if (service->getUUID().shortOrLong() == UUID::UUID_TYPE_SHORT) {
         printf("S UUID-%x attrs[%u %u]\r\n", service->getUUID().getShortUUID(), service->getStartHandle(), service->getEndHandle());
     } else {
@@ -45,37 +47,40 @@ void serviceDiscoveryCallback(const DiscoveredService *service) {
     }
 }
 
-void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP) {
-    if (characteristicP->getShortUUID() == 0x2a37) { 
+void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP)
+{
+    if (characteristicP->getUUID().getShortUUID() == 0x2a37) { 
         HRMCharacteristic = *characteristicP;
         HRMFound          = true;
     }
-    if (characteristicP->getShortUUID() == 0xA001){
+    if (characteristicP->getUUID().getShortUUID() == 0xA001){
         LEDCharacteristic = *characteristicP;
         LEDFound          = true;   
     }
 }
 
-void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
-    printf("Connected to: %d:%d:%d:%d:%d:%d\n", params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]); 
+void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
+{
+    printf("Connected to: %d:%d:%d:%d:%d:%d\n", 
+            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]); 
     if (params->role == Gap::CENTRAL) {
         deviceAHandle = params->handle;
         ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
-        
     }
 }
 
-void triggerToggledWrite(const GattReadCallbackParams *response) {
+void triggerToggledWrite(const GattReadCallbackParams *response)
+{
     if (response->handle == HRMCharacteristic.getValueHandle()) {
         printf("HRMCounter: %d\n",  response->data[1]);
     }
     if (response->handle == LEDCharacteristic.getValueHandle()) {
         printf("LED: %d\n", response->data[0]);
-        
     }
 }
 
-void connectTest(){
+void connectTest()
+{
     if (!(ble.gap().getState().connected)){
         ASSERT_NO_FAILURE(ble.gap().connect(address,Gap::ADDR_TYPE_RANDOM_STATIC,NULL,NULL));
     }
@@ -93,7 +98,9 @@ void readTest(){
         printf("Characteristic not found\r\n");
     }
 }
-void writeTest(){
+
+void writeTest()
+{
     if (!(ble.gap().getState().connected)){
         printf("Devices must be connected before this test can be run\n");
         return;
@@ -108,14 +115,16 @@ void writeTest(){
     }
 }
 
-void disconnectTest(){
+void disconnectTest()
+{
     if ((ble.gap().getState().connected)){
         ASSERT_NO_FAILURE(ble.gap().disconnect(deviceAHandle, Gap::REMOTE_USER_TERMINATED_CONNECTION));
     }
     else printf("Devices not connected\n");        
 }
 
-void commandInterpreter(){
+void commandInterpreter()
+{
     char command[50];
     while(true){
         scanf("%s", command);

@@ -31,7 +31,6 @@ const static char     DEVICE_NAME[]        = "HRMTEST";
 static const uint16_t uuid16_list[]        = {GattService::UUID_HEART_RATE_SERVICE,
                                               GattService::UUID_DEVICE_INFORMATION_SERVICE,
                                               LEDService::LED_SERVICE_UUID};
-static volatile bool  triggerSensorPolling = false;
 
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
@@ -78,7 +77,7 @@ void testAppearance()
     wait(0.5);
     ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
     wait(0.5);
-    printf("%d\r\n",appearance);
+    printf("%d\r\n", appearance);
 }
 
 void connParams()

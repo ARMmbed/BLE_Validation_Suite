@@ -33,7 +33,7 @@ def connectTest(aSer,bSer):
 		outputB = bSer.readline()
 		if 'Devices already connected' in outputB:
 			return True
-		if '{{success}}' not in outputB:
+		if '{{success}}' not in outputB and outputB != '':
 			print 'MBED[B]: ' + outputB,
 		if 'Connected' in outputB:
 			return True
@@ -120,7 +120,7 @@ def readTest(aSer,bSer):
 		print 'HRM Characteristic not found'
 		return False
 	outputB = bSer.readline()
-	if '{{success}}' not in outputB:
+	if '{{success}}' not in outputB and outputB != '':
 		print 'MBED[B]: ' + outputB,
 	if 'HRM' in outputB:
 		return True
@@ -137,17 +137,18 @@ def writeTest(aSer,bSer):
 	if 'Devices must be connected' in outputB:
 		print 'device must be connected'
 		return False
+		
 	outputB = bSer.readline()
-	if '{{success}}' not in outputB:
+	if '{{success}}' not in outputB and outputB != '':
 		print 'MBED[B]: ' + outputB,
 	outputB = bSer.readline()
-	if '{{success}}' not in outputB:
+	if '{{success}}' not in outputB and outputB != '':
 		print 'MBED[B]: ' + outputB,
 	if 'LED: 1' in outputB:
 		return True
 	else:
-		print 'MBED[B]: ' + outputB
 		return False
+	
 
 '''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
 @param aSer the serial object for device A
