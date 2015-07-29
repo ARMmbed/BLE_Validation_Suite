@@ -23,3 +23,13 @@ to test HRM or iBeacon BLE Capibilities
 ** A.cpp, B.cpp are used for the iBeacon tests for device A and B. 
 AHRM.cpp and BHRM.cpp are used for the HRM tests for device A and B
 
+# Adding new tests
+
+To add a test for advertising add a test function to iBeacon_tests.py. In Validation_Suite.py add the test name string 
+and the function to testDict in the iBeaconTest function. Add a function to A.cpp and add an if to commandInterpreter().
+
+
+to add a test for connected devices add a test function to HRM_tests.py. In Validation_Suite.py add the test name string 
+and the function to either testDictA or testDictB. Testing characteristics and services should be put in testDictB and
+other in testDictA. Add a function to A.cpp or B.cpp depending on if the test is in testDictA or testDictB and add
+an if to the respective commandInterpreter() function in the .cpp file
