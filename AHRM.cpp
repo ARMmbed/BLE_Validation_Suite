@@ -116,20 +116,8 @@ void commandInterpreter(void)
 
 unsigned verifyBasicAssumptions()
 {
-    if(ble.init()) return 1;
-    
     ble.gap().onDisconnection(disconnectionCallback);
     ble.gap().onConnection(connectionCallback);
-
-    /* Setup primary service. */
-    uint8_t hrmCounter = 100; // init HRM to 100bps
-    HeartRateService hrService(ble, hrmCounter, HeartRateService::LOCATION_FINGER);
-
-    bool initialValueForLEDCharacteristic = false;
-    LEDService ledService(ble, initialValueForLEDCharacteristic);
-
-    /* Setup auxiliary service. */
-    DeviceInformationService deviceInfo(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
 
     /* Setup advertising. */
     if(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE)) return 1;
@@ -146,7 +134,16 @@ unsigned verifyBasicAssumptions()
 
 int main(void)
 {
-    unsigned errorCode = verifyBasicAssumptions();
+    unsigned errorCode = ble.init();
+    uint8_t hrmCounter = 100; // init HRM to 100bps
+    HeartRateService hrService(ble, hrmCounter, HeartRateService::LOCATION_FINGER);
+
+    bool initialValueForLEDCharacteristic = false;
+    LEDService ledService(ble, initialValueForLEDCharacteristic);
+
+    DeviceInformationService deviceInfo(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
+    
+    errorCode |= verifyBasicAssumptions();
     
     printf("{{success}}\n{{end}}\n"); /* hand over control from the host test to the python script. */
     

@@ -39,7 +39,7 @@ def connectTest(aSer,bSer):
 			return True
 		if time.time() - time1 > TIMEOUT:
 			return False
-
+		
 '''! tests setDeviceName and getDeviceName functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
@@ -137,7 +137,6 @@ def writeTest(aSer,bSer):
 	if 'Devices must be connected' in outputB:
 		print 'device must be connected'
 		return False
-		
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
 		print 'MBED[B]: ' + outputB,

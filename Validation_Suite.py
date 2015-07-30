@@ -113,6 +113,7 @@ def HRMTest(aSer,bSer):
 	testDictB = {'connect': HRM.connectTest, 'disconnect': HRM.disconnectTest, 'read': HRM.readTest, 'write': HRM.writeTest}
 	while True:
 		time.sleep(2)
+		
 		print '\nWhat test? -1 to finish',
 		for i in testDictA.keys():
 			print ', ' + i,
@@ -170,7 +171,6 @@ def transferAddr(aSer,bSer):
 	if 'failed' in basicAssumptions:
 		print 'Basic Assumptions failed'
 		sys.exit()
-
 	getAddressError = aSer.readline()
 	if '{{failure}}' in getAddressError:
 		print 'MBED[A]: ' + getAddressError,
@@ -190,13 +190,20 @@ def transferAddr(aSer,bSer):
 
 if __name__ == "__main__":
 	# DETECTION
+	'''
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
 	aMount = getJson(0, 'mount_point')
 	bMount = getJson(1, 'mount_point')
 	aName = getJson(0, 'platform_name')
 	bName = getJson(1, 'platform_name')
-
+	'''
+	bPort = getJson(0, 'serial_port')
+	aPort = getJson(1, 'serial_port')
+	bMount = getJson(0, 'mount_point')
+	aMount = getJson(1, 'mount_point')
+	bName = getJson(0, 'platform_name')
+	aName = getJson(1, 'platform_name')
 	if len(sys.argv) < 2:
 		print 'Give test name as argument e.g. -iBeacon'
 		sys.exit()
