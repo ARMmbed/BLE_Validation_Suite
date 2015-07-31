@@ -101,6 +101,11 @@ def iBeaconTest(aSer,bSer):
 @param bSer the serial object for device B
 '''
 def HRMTest(aSer,bSer):
+	bleInitCheck = bSer.readline()
+	if '{{failure}}' in bleInitCheck:
+		print 'MBED[B]: ' + bleInitCheck,
+		print 'Test cannot continue with ble.init. Test ending'
+		return 
 	setScanParamsOutput = bSer.readline()
 	if '{{failure}}' in setScanParamsOutput:
 		print 'MBED[B]: ' + setScanParamsOutput,

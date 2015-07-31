@@ -138,7 +138,6 @@ void commandInterpreter()
 int main(void)
 {
     printf("{{end}}\n");
-    ble.init();
     scanf("%hhu",&address[0]);
     scanf("%hhu",&address[1]);
     scanf("%hhu",&address[2]);
@@ -146,7 +145,7 @@ int main(void)
     scanf("%hhu",&address[4]);
     scanf("%hhu",&address[5]);
     
-    
+    ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(triggerToggledWrite);
