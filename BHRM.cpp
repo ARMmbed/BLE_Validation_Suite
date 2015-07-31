@@ -105,11 +105,9 @@ void writeTest()
         printf("Devices must be connected before this test can be run\n");
         return;
     }
-    uint8_t write_value = 1;
     if (LEDFound){
+        uint8_t write_value = 1;
         ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value));
-        wait(0.5);
-        ASSERT_NO_FAILURE(LEDCharacteristic.read());
     } else{
         printf("Characeristic not found\r\n");
     }
@@ -135,6 +133,10 @@ void commandInterpreter()
     }    
 }
 
+void writeCallback(const GattWriteCallbackParams *params){
+    ASSERT_NO_FAILURE(LEDCharacteristic.read());
+}
+
 int main(void)
 {
     printf("{{end}}\n");
@@ -147,8 +149,9 @@ int main(void)
     
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
+    
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(triggerToggledWrite);
-    
+    ble.gattClient().onDataWrite(writeCallback);
     commandInterpreter();
 }
