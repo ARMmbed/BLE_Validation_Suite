@@ -6,6 +6,8 @@ import datetime
 import time
 import sys
 import threading
+import itertools
+import types
 from types import *
 from pprint import pprint
 import HRM_tests as HRM
@@ -54,8 +56,11 @@ def iBeaconTest(aSer,bSer):
 	passList = []
 	failList = []
 
-	testDict = {'setAdvertisingInterval': iBeacon.changeAdTest, 'accumulateAdvertisingPayload': iBeacon.changePayloadTest, 'setAdvertisingTimeout': iBeacon.setTimeoutTest, \
-				'accumulateScanResponse': iBeacon.responseTest, 'iBeaconTest': iBeacon.detectTest, 'setgetAddress': iBeacon.setAddrTest}
+	# testDict = {'setAdvertisingInterval': iBeacon.changeAdTest, 'accumulateAdvertisingPayload': iBeacon.changePayloadTest, 'setAdvertisingTimeout': iBeacon.setTimeoutTest, \
+	# 			'accumulateScanResponse': iBeacon.responseTest, 'iBeaconTest': iBeacon.detectTest, 'setgetAddress': iBeacon.setAddrTest}
+	names = [iBeacon.__dict__.get(a).__name__[:-4] for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
+	funcs = [iBeacon.__dict__.get(a) for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
+	testDict = dict(zip(names, funcs))
 	while True:
 		time.sleep(2)
 		print '\nWhat test? -1 to finish',
@@ -78,13 +83,15 @@ def iBeaconTest(aSer,bSer):
 		aSer.flush()
 		print ''
 		aSer.write(str(testInput) + '\n')
-		try:
-			if (funcTest(aSer,bSer)):
-				passList = (list(set(passList + [testInput])))
-			else:
+		
+		if (funcTest(aSer,bSer)):
+			if testInput in failList:
+				failList.remove(testInput)
+			passList = (list(set(passList + [testInput])))
+
+		else:
+			if testInput not in passList:
 				failList = (list(set(failList + [testInput])))
-		except IndexError:
-			print 'Invalid test. Try Again'
 		
 		aSer.write('1\n')
 	print 'SUCCESSFUL TESTS: {0}/{1}'.format(len(passList),len(passList + failList))
@@ -114,8 +121,14 @@ def HRMTest(aSer,bSer):
 	passList = []
 	failList = []
 	bSer.write('1\n')
-	testDictA = {'setDeviceName': HRM.deviceNameTest, 'setAppearance': HRM.appearanceTest, 'testConnectionParams': HRM.connParamTest}
-	testDictB = {'connect': HRM.connectTest, 'disconnect': HRM.disconnectTest, 'read': HRM.readTest, 'write': HRM.writeTest}
+	# testDictA = {'setDeviceName': HRM.deviceNameTest, 'setAppearance': HRM.appearanceTest, 'testConnectionParams': HRM.connParamTest}
+	# testDictB = {'connect': HRM.connectTest, 'disconnect': HRM.disconnectTest, 'read': HRM.readTest, 'write': HRM.writeTest}
+	namesA = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
+	funcsA = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
+	testDictA = dict(zip(namesA, funcsA))
+	namesB = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
+	funcsB = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
+	testDictB = dict(zip(namesB, funcsB))
 	while True:
 		time.sleep(2)
 		

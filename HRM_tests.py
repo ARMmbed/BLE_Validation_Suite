@@ -24,7 +24,7 @@ def aSerialRead(aSer, str):
 @param aSer serial port of device A
 @param bSer serial port of device B
 '''
-def connectTest(aSer,bSer):
+def connectTestB(aSer,bSer):
 	thread = threading.Thread(target = aSerialRead, args = (aSer,'MBED[A]: ',))
 	thread.daemon = True
 	thread.start()
@@ -43,7 +43,7 @@ def connectTest(aSer,bSer):
 '''! tests setDeviceName and getDeviceName functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
-def deviceNameTest(aSer,bSer):
+def setDeviceNameTestA(aSer,bSer):
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
 		print 'device must be disconnected'
@@ -63,7 +63,7 @@ def deviceNameTest(aSer,bSer):
 '''! tests setAppearance and getAppearance functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
-def appearanceTest(aSer,bSer):
+def appearanceTestA(aSer,bSer):
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
 		print 'device must be disconnected'
@@ -84,7 +84,7 @@ def appearanceTest(aSer,bSer):
 @param aSer the serial port for device A
 @param bSer teh serial port for device B
 '''
-def connParamTest(aSer,bSer):
+def connParamTestA(aSer,bSer):
 	getConn = aSer.readline()
 	if 'Device must be disconnected' in getConn:
 		print 'device must be disconnected'
@@ -111,7 +111,7 @@ def connParamTest(aSer,bSer):
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
 '''
-def readTest(aSer,bSer):
+def readTestB(aSer,bSer):
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
 		print 'device must be connected'
@@ -132,7 +132,7 @@ def readTest(aSer,bSer):
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
 '''
-def writeTest(aSer,bSer):
+def writeTestB(aSer,bSer):
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
 		print 'device must be connected'
@@ -153,7 +153,7 @@ def writeTest(aSer,bSer):
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
 '''
-def disconnectTest(aSer,bSer):
+def disconnectTestB(aSer,bSer):
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB:
 		print 'MBED[B]: ' + outputB,

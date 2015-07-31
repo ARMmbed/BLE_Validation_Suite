@@ -164,12 +164,12 @@ void commandInterpreter(void)
         scanf("%s", command); /* fetch the testname from the host python script. */
 
         /* implement a cheap command interpreter based on strcmp */
-        if (!strcmp(command, "setAdvertisingInterval"))            changeAdvertisingInterval();
-        else if (!strcmp(command, "accumulateAdvertisingPayload")) changeAdvPay();
-        else if (!strcmp(command, "setAdvertisingTimeout"))        timeoutTest();
-        else if (!strcmp(command, "accumulateScanResponse"))       changeScanRes();
-        else if (!strcmp(command, "iBeaconTest"))                  setupIBeaconTest();
-        else if (!strcmp(command, "setgetAddress"))                setAddrTest();
+        if (!strcmp(command, "changeInterval"))            changeAdvertisingInterval();
+        else if (!strcmp(command, "changePayload")) changeAdvPay();
+        else if (!strcmp(command, "setTimeout"))        timeoutTest();
+        else if (!strcmp(command, "response"))       changeScanRes();
+        else if (!strcmp(command, "detect"))                  setupIBeaconTest();
+        else if (!strcmp(command, "setAddr"))                setAddrTest();
 
         /* synchronize with the host python script */
         unsigned synchroniztion;

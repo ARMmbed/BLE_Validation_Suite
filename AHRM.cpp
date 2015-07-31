@@ -109,8 +109,8 @@ void commandInterpreter(void)
         scanf("%s", command);
 
         if (!strcmp(command, "setDeviceName"))             testDeviceName();
-        else if (!strcmp(command, "setAppearance"))        testAppearance();
-        else if (!strcmp(command, "testConnectionParams")) connParams();
+        else if (!strcmp(command, "appearance"))        testAppearance();
+        else if (!strcmp(command, "connParam")) connParams();
     }
 }
 

@@ -80,7 +80,7 @@ def setAddrTest(aSer,bSer):
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
 '''	
-def changeAdTest(aSer,bSer):
+def changeIntervalTest(aSer,bSer):
 	print '\nTESTING setAdvertisingInterval\n'
 	counter1 = 0
 	counter2 = 0
@@ -114,7 +114,7 @@ def changeAdTest(aSer,bSer):
 			elif counter3 > 30:
 				return False
 			counter3 = counter3 + 1
-			if time.time() - time3 > TIMEOUT:
+			if time.time() - time3 > TIMEOUT * 1.5:
 				return False
 
 '''! test to see if the advertisement payload can be changed
