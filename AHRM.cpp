@@ -90,13 +90,16 @@ void connParams()
     Gap::ConnectionParams_t params;
     Gap::ConnectionParams_t paramsOut = {50,500,0,500};
     Gap::ConnectionParams_t temp;
+
     ASSERT_NO_FAILURE(ble.gap().getPreferredConnectionParams(&temp));
     ASSERT_NO_FAILURE(ble.gap().setPreferredConnectionParams(&paramsOut));
     ble.gap().getPreferredConnectionParams(&params);
+
     printf("%d\n", params.minConnectionInterval);
     printf("%d\n", params.maxConnectionInterval);
     printf("%d\n", params.slaveLatency);
     printf("%d\n", params.connectionSupervisionTimeout);
+    
     ble.gap().setPreferredConnectionParams(&temp);
 
 }

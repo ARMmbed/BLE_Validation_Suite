@@ -21,7 +21,7 @@
 #define DUMP_ADV_DATA 0
 
 #define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X,Y) ((X)==(Y)) ? (printf("{{sucess}}\n")) : printf("{{failure}}\n");
+#define CHECK_EQUALS(X,Y)     ((X)==(Y)) ?            (printf("{{sucess}}\n"))    : printf("{{failure}}\n");
 
 BLE                 ble;
 Gap::Address_t      address;
@@ -54,11 +54,11 @@ void serviceDiscoveryCallback(const DiscoveredService *service)
  */
 void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP)
 {
-    if (characteristicP->getUUID().getShortUUID() == 0x2a37) { 
+    if (characteristicP->getUUID().getShortUUID() == 0x2a37) { /* Searches for HRM Characteristic*/
         HRMCharacteristic = *characteristicP;
         HRMFound          = true;
     }
-    if (characteristicP->getUUID().getShortUUID() == 0xA001){
+    if (characteristicP->getUUID().getShortUUID() == 0xA001){ /* Searches for LED Characteristic*/
         LEDCharacteristic = *characteristicP;
         LEDFound          = true;   
     }
@@ -72,7 +72,7 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
     printf("Connected to: %d:%d:%d:%d:%d:%d\n", 
             params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]); 
     if (params->role == Gap::CENTRAL) {
-        deviceAHandle = params->handle;
+        deviceAHandle = params->handle; /* Handle for device A so it is it possible to disconnect*/
         ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
     }
 }
@@ -105,7 +105,7 @@ void connectTest()
  * Tests reading from to the heart rate characteristic. Devices need to be connected for this test.
  */
 void readTest(){
-    if (!(ble.gap().getState().connected)){
+    if (!(ble.gap().getState().connected)){ 
         printf("Devices must be connected before this test can be run\n");
         return;
     }
@@ -128,7 +128,7 @@ void writeTest()
     }
     if (LEDFound){
         uint8_t write_value = 1;
-        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value));
+        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value)); /* When write finishes, writeCallback is called */
     } else{
         printf("Characeristic not found\r\n");
     }
@@ -152,7 +152,7 @@ void commandInterpreter()
 {
     char command[50];
     while(true){
-        scanf("%s", command);
+        scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
         if (!strcmp(command, "connect")) connectTest();
         else if (!strcmp(command, "disconnect")) disconnectTest();
         else if (!strcmp(command, "read")) readTest();
@@ -169,7 +169,7 @@ void writeCallback(const GattWriteCallbackParams *params){
 
 int main(void)
 {
-    printf("{{end}}\n");
+    printf("{{end}}\n"); /* Hands control over to Python script */
     scanf("%hhu",&address[0]);
     scanf("%hhu",&address[1]);
     scanf("%hhu",&address[2]);
