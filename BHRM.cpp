@@ -32,7 +32,9 @@ DiscoveredCharacteristic LEDCharacteristic;
 bool LEDFound =          false;
 Gap::Handle_t            deviceAHandle;
     
-
+/*
+ * Call back when a service is discovered
+ */
 void serviceDiscoveryCallback(const DiscoveredService *service)
 {
     if (service->getUUID().shortOrLong() == UUID::UUID_TYPE_SHORT) {
@@ -47,6 +49,9 @@ void serviceDiscoveryCallback(const DiscoveredService *service)
     }
 }
 
+/*
+ * Call back when a characteristic is discovered
+ */
 void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP)
 {
     if (characteristicP->getUUID().getShortUUID() == 0x2a37) { 
@@ -59,6 +64,9 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
     }
 }
 
+/*
+ * Call back when device is connected
+ */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
 {
     printf("Connected to: %d:%d:%d:%d:%d:%d\n", 
@@ -69,7 +77,10 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
     }
 }
 
-void triggerToggledWrite(const GattReadCallbackParams *response)
+/*
+ * The callback for reading a characteristic, print depends on what characteristic is read
+ */
+void readCharacteristic(const GattReadCallbackParams *response)
 {
     if (response->handle == HRMCharacteristic.getValueHandle()) {
         printf("HRMCounter: %d\n",  response->data[1]);
@@ -79,6 +90,9 @@ void triggerToggledWrite(const GattReadCallbackParams *response)
     }
 }
 
+/*
+ * Tests connecting devices. Devices must be disconnected for this test
+ */
 void connectTest()
 {
     if (!(ble.gap().getState().connected)){
@@ -87,6 +101,9 @@ void connectTest()
     else printf("Devices already connected\n");
 }
 
+/*
+ * Tests reading from to the heart rate characteristic. Devices need to be connected for this test.
+ */
 void readTest(){
     if (!(ble.gap().getState().connected)){
         printf("Devices must be connected before this test can be run\n");
@@ -99,6 +116,10 @@ void readTest(){
     }
 }
 
+/**
+ * Tests writing to the LED Characteristic. Then reads from the callback to verify that the write is correct.
+ * Devices need to be connected for this test.
+ */
 void writeTest()
 {
     if (!(ble.gap().getState().connected)){
@@ -113,6 +134,9 @@ void writeTest()
     }
 }
 
+/** 
+ * Tests disconnecting devices. If it is already connected it prints a message
+ */
 void disconnectTest()
 {
     if ((ble.gap().getState().connected)){
@@ -121,6 +145,9 @@ void disconnectTest()
     else printf("Devices not connected\n");        
 }
 
+/**
+ * Controls which tests are run from input from PC
+ */
 void commandInterpreter()
 {
     char command[50];
@@ -133,6 +160,9 @@ void commandInterpreter()
     }    
 }
 
+/**
+ * Call back for writing to LED characteristic. 
+ */
 void writeCallback(const GattWriteCallbackParams *params){
     ASSERT_NO_FAILURE(LEDCharacteristic.read());
 }
@@ -151,7 +181,7 @@ int main(void)
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
     
     ble.gap().onConnection(connectionCallback);
-    ble.gattClient().onDataRead(triggerToggledWrite);
+    ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
     commandInterpreter();
 }
