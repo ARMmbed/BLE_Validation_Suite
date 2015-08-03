@@ -67,7 +67,7 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
     }
     if (characteristicP->getUUID().getShortUUID() == 0xA003) {
         BTNCharacteristic = *characteristicP;
-        BTNFound          = true;    
+        BTNFound          = true;
     }
 }
 
@@ -96,7 +96,7 @@ void readCharacteristic(const GattReadCallbackParams *response)
         printf("LED: %d\n", response->data[0]);
     }
     if (response->handle == BTNCharacteristic.getValueHandle()) {
-        printf("BTN: %d\n", response->data[0]);    
+        printf("BTN: %d\n", response->data[0]);
     }
 }
 
@@ -169,9 +169,9 @@ void notificationTest()
                                    deviceAHandle,
                                    BTNCharacteristic.getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
                                    sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
-                                   reinterpret_cast<const uint8_t *>(&value)));    
+                                   reinterpret_cast<const uint8_t *>(&value)));
     } else {
-        printf("Characteristic not found\r\r");    
+        printf("Characteristic not found\r\r");
     }
 }
 
@@ -203,12 +203,15 @@ void commandInterpreter()
 void writeCallback(const GattWriteCallbackParams *params)
 {
     if (params->handle == LEDCharacteristic.getValueHandle()) {
-        ASSERT_NO_FAILURE(LEDCharacteristic.read());   
+        ASSERT_NO_FAILURE(LEDCharacteristic.read());
     } else if (params->handle == BTNCharacteristic.getValueHandle() + 1) {
-        printf("Sync\r\n");   
+        printf("Sync\r\n"); /* This 'Sync' printf triggers the python script to initiate the notification test on the A-peripheral. */
     }
 }
 
+/**
+ * Dump the updated value of the button in response to a value change notification.
+ */
 void hvxCallback(const GattHVXCallbackParams *params) {
     printf("Button: ");
     for (unsigned index = 0; index < params->len; index++) {
