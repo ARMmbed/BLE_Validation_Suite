@@ -20,6 +20,7 @@
 #include "ble/services/BatteryService.h"
 #include "ble/services/DeviceInformationService.h"
 #include "LEDService.h"
+#include "ButtonService.h"
 
 #define ASSERT_NO_FAILURE(X) (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
 #define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{sucess}}\r\n")) : printf("{{failure}}\r\n");
@@ -32,6 +33,7 @@ static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
                                        GattService::UUID_DEVICE_INFORMATION_SERVICE,
                                        LEDService::LED_SERVICE_UUID};
 
+ButtonService *btnServicePtr;
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
@@ -56,14 +58,14 @@ void testDeviceName()
 
     const size_t MAX_DEVICE_NAME_LEN = 50;
     uint8_t  deviceName[MAX_DEVICE_NAME_LEN];
-    unsigned length;
+    unsigned length = MAX_DEVICE_NAME_LEN;
     ASSERT_NO_FAILURE(ble.gap().getDeviceName(deviceName, &length));
-
+    
     for (unsigned i = 0; i < length; i++) {
         printf("%02x ", deviceName[i]);
     }
     printf("\r\n");
-    for (unsigned i = 0; i < (strlen(deviceNameIn) + 1); i++) {
+    for (unsigned i = 0; i < strlen((char *)deviceNameIn); i++) {
         printf("%02x ", deviceNameIn[i]);
     }
     printf("\r\n");
@@ -107,6 +109,10 @@ void connParams()
     ble.gap().setPreferredConnectionParams(&temp);
 }
 
+void notificationTest(void) {
+    btnServicePtr->updateButtonState(true);
+}
+
 void commandInterpreter(void)
 {
     const static size_t MAX_SIZEOF_COMMAND = 50;
@@ -118,8 +124,10 @@ void commandInterpreter(void)
             testDeviceName();
         } else if (!strcmp(command, "appearance")) {
             testAppearance();
-        } else if (!strcmp(command, "connParam"))                                                        {
+        } else if (!strcmp(command, "connParam")) {
             connParams();
+        } else if (!strcmp(command, "notification")) {
+            notificationTest();
         }
     }
 }
@@ -166,9 +174,10 @@ int main(void)
         bool                      initialValueForLEDCharacteristic = false;
         LEDService               *ledService                       = new LEDService(ble, initialValueForLEDCharacteristic);
 
-        DeviceInformationService *deviceInfo = DeviceInformationService(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
+        DeviceInformationService *deviceInfo = new DeviceInformationService(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
+        
+        btnServicePtr = new ButtonService(ble, false); 
     }
-
     errorCode |= verifyBasicAssumptions();
     if (errorCode == 0) {
         printf("{{success}}\r\n{{end}}\r\n"); /* hand over control from the host test to the python script. */

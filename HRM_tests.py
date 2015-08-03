@@ -36,6 +36,7 @@ def connectTestB(aSer,bSer):
 		if '{{success}}' not in outputB and outputB != '':
 			print 'MBED[B]: ' + outputB,
 		if 'Connected' in outputB:
+			time.sleep(2)
 			return True
 		if time.time() - time1 > TIMEOUT:
 			return False
@@ -147,8 +148,23 @@ def writeTestB(aSer,bSer):
 		return True
 	else:
 		return False
-	
 
+'''!
+@param aSer the serial object for device A
+@param bSer the serial object for device B
+'''	
+def notificationTestB(aSer, bSer):
+	writeError = bSer.readline()
+	if '{{failure}}' in writeError:
+		print 'MBED[B]: ' + writeError,
+		return False
+	Sync = bSer.readline()
+	aSer.write('notification\n')
+	hvxCallback = bSer.readline()
+	print 'MBED[B]: ' + hvxCallback
+	if 'Button' not in hvxCallback:
+		return False
+	return True
 '''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
 @param aSer the serial object for device A
 @param bSer the serial object for device B 

@@ -30,7 +30,10 @@ DiscoveredCharacteristic HRMCharacteristic;
 bool                     HRMFound =          false;
 DiscoveredCharacteristic LEDCharacteristic;
 bool                     LEDFound =          false;
+DiscoveredCharacteristic BTNCharacteristic;
+bool                     BTNFound =          false;
 Gap::Handle_t            deviceAHandle;
+
 
 /*
  * Call back when a service is discovered
@@ -62,6 +65,10 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
         LEDCharacteristic = *characteristicP;
         LEDFound          = true;
     }
+    if (characteristicP->getUUID().getShortUUID() == 0xA003) {
+        BTNCharacteristic = *characteristicP;
+        BTNFound          = true;    
+    }
 }
 
 /*
@@ -88,6 +95,9 @@ void readCharacteristic(const GattReadCallbackParams *response)
     if (response->handle == LEDCharacteristic.getValueHandle()) {
         printf("LED: %d\n", response->data[0]);
     }
+    if (response->handle == BTNCharacteristic.getValueHandle()) {
+        printf("BTN: %d\n", response->data[0]);    
+    }
 }
 
 /*
@@ -98,8 +108,8 @@ void connectTest()
     if (!(ble.gap().getState().connected)) {
         ASSERT_NO_FAILURE(ble.gap().connect(address, Gap::ADDR_TYPE_RANDOM_STATIC, NULL, NULL));
     } else {
-	    printf("Devices already connected\n");
-	}
+        printf("Devices already connected\n");
+    }
 }
 
 /*
@@ -143,7 +153,25 @@ void disconnectTest()
     if ((ble.gap().getState().connected)) {
         ASSERT_NO_FAILURE(ble.gap().disconnect(deviceAHandle, Gap::REMOTE_USER_TERMINATED_CONNECTION));
     } else {
-	    printf("Devices not connected\n");
+        printf("Devices not connected\n");
+    }
+}
+
+void notificationTest()
+{
+    if (!ble.gap().getState().connected) {
+        printf("Devices must be connected before this test can be run\n");
+        return;
+    }
+    if (BTNFound) {
+        uint16_t value = BLE_HVX_NOTIFICATION;
+        ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
+                                   deviceAHandle,
+                                   BTNCharacteristic.getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
+                                   sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
+                                   reinterpret_cast<const uint8_t *>(&value)));    
+    } else {
+        printf("Characteristic not found\r\r");    
     }
 }
 
@@ -159,10 +187,12 @@ void commandInterpreter()
             connectTest();
         } else if (!strcmp(command, "disconnect")) {
             disconnectTest();
-        } else if (!strcmp(command, "read"))                                                        {
+        } else if (!strcmp(command, "read")) {
             readTest();
-        } else if (!strcmp(command, "write"))                                                                                                          {
+        } else if (!strcmp(command, "write")) {
             writeTest();
+        } else if (!strcmp(command, "notification")) {
+            notificationTest();
         }
     }
 }
@@ -170,8 +200,21 @@ void commandInterpreter()
 /**
  * Call back for writing to LED characteristic.
  */
-void writeCallback(const GattWriteCallbackParams *params){
-    ASSERT_NO_FAILURE(LEDCharacteristic.read());
+void writeCallback(const GattWriteCallbackParams *params)
+{
+    if (params->handle == LEDCharacteristic.getValueHandle()) {
+        ASSERT_NO_FAILURE(LEDCharacteristic.read());   
+    } else if (params->handle == BTNCharacteristic.getValueHandle() + 1) {
+        printf("Sync\r\n");   
+    }
+}
+
+void hvxCallback(const GattHVXCallbackParams *params) {
+    printf("Button: ");
+    for (unsigned index = 0; index < params->len; index++) {
+        printf("%02x", params->data[index]);
+    }
+    printf("\r\n");
 }
 
 int main(void)
@@ -190,5 +233,6 @@ int main(void)
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
+    ble.gattClient().onHVX(hvxCallback);
     commandInterpreter();
 }

@@ -185,13 +185,9 @@ def HRMTest(aSer,bSer):
 def transferAddr(aSer,bSer):
 	aSer.write('1\n')
 
-	basicAssumptions = aSer.readline()
-	if 'failed' in basicAssumptions:
-		print 'Basic Assumptions failed'
-		sys.exit()
-	getAddressError = aSer.readline()
-	if '{{failure}}' in getAddressError:
-		print 'MBED[A]: ' + getAddressError,
+	errorTest = aSer.readline()
+	if '{{success}}' not in errorTest:
+		print 'MBED[A]: ' + errorTest,
 		sys.exit()
 	print 'Reading MAC'
 	MAC = aSer.readline()
