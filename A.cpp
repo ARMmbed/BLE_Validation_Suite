@@ -41,7 +41,7 @@ void setupIBeaconTest(void)
 
     ble.gap().setAdvertisingInterval(1000); /* 1000ms. */
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), (uint16_t)1000); /* TODO: what does this return?? */
-    
+
     ble.gap().setAdvertisingTimeout(0);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
 
@@ -164,12 +164,12 @@ void commandInterpreter(void)
         scanf("%s", command); /* fetch the testname from the host python script. */
 
         /* implement a cheap command interpreter based on strcmp */
-        if (!strcmp(command, "changeInterval"))            changeAdvertisingInterval();
+        if (!strcmp(command, "changeInterval"))     changeAdvertisingInterval();
         else if (!strcmp(command, "changePayload")) changeAdvPay();
-        else if (!strcmp(command, "setTimeout"))        timeoutTest();
-        else if (!strcmp(command, "response"))       changeScanRes();
-        else if (!strcmp(command, "detect"))                  setupIBeaconTest();
-        else if (!strcmp(command, "setAddr"))                setAddrTest();
+        else if (!strcmp(command, "setTimeout"))    timeoutTest();
+        else if (!strcmp(command, "response"))      changeScanRes();
+        else if (!strcmp(command, "detect"))        setupIBeaconTest();
+        else if (!strcmp(command, "setAddr"))       setAddrTest();
 
         /* synchronize with the host python script */
         unsigned synchroniztion;
@@ -179,18 +179,22 @@ void commandInterpreter(void)
     }
 }
 
+/**
+ * @return 0 if basic assumptions are validated. Non-zero returns are used to
+ *     terminate the second-level python script early.
+ */
 unsigned verifyBasicAssumptions()
 {
-    if(ble.init()){
-        return 1;    
+    if (ble.init()) {
+        return 1;
     }
 
     /* Read in the MAC address of this peripheral. The corresponding central will be
      * commanded to co-ordinate with this address. */
     Gap::AddressType_t addressType;
     Gap::Address_t     address;
-    if(ble.gap().getAddress(&addressType, address)){
-        return 1;   
+    if (ble.gap().getAddress(&addressType, address)) {
+        return 1;
     } /* TODO: if this fails, then bail out with a useful report. */
 
     /* Check that the state is one of the valid values. */
@@ -198,23 +202,26 @@ unsigned verifyBasicAssumptions()
     if ((state.connected == 1) || (state.advertising == 1)) {
         printf("{{failure}} ble.gap().getState() at line %u\r\n", __LINE__); /* writing out {{failure}} will halt the host test runner. */
         return 1;
-    } else {
-        printf("{{success}}\r\n");
-        return 0;
     }
+
+    printf("{{success}}\r\n");
+    return 0;
 }
 
 int main(void)
 {
     unsigned errorCode = verifyBasicAssumptions();
 
-    printf("{{end}}\n"); // tells mbedhtrun to finish and hand control over to the second level python script.
+    printf("{{end}}\r\n"); // tells mbedhtrun to finish and hand control over to the second level python script.
 
     /* Synchronize with the second python script--wait for something to arrive on the console. */
     unsigned syncer;
     scanf("%d",&syncer);
-    
-    errorCode ? printf("Initial basic assumptions failed\r\n") : printf("Initial basic assumptions success\r\n");
+
+    if (errorCode) {
+        printf("Initial basic assumptions failed\r\n"); /* this will halt the second level python script. */
+        return -1;
+    }
 
     /* Refetch the address to write out to the console. */
     Gap::Address_t     address;
