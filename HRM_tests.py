@@ -158,6 +158,9 @@ def notificationTestB(aSer, bSer):
 	if '{{failure}}' in writeError:
 		print 'MBED[B]: ' + writeError,
 		return False
+	if 'Devices must be connected' in writeError:
+		print 'device must be connected'
+		return False
 	Sync = bSer.readline()
 	aSer.write('notification\n')
 	hvxCallback = bSer.readline()

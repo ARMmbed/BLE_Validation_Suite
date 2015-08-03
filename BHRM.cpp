@@ -171,7 +171,7 @@ void notificationTest()
                                    sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
                                    reinterpret_cast<const uint8_t *>(&value)));    
     } else {
-        printf("Characteristic not found\r\r");    
+        printf("Characteristic not found\r\n");    
     }
 }
 
