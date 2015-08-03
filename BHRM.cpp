@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "mbed.h"
 #include "BLE.h"
 #include "ble/DiscoveredCharacteristic.h"
 #include "ble/DiscoveredService.h"
 #define DUMP_ADV_DATA 0
 
-#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X,Y)     ((X)==(Y)) ?            (printf("{{sucess}}\n"))    : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", # X, __LINE__, (X));
+#define CHECK_EQUALS(X, Y)     ((X)==(Y)) ?            (printf("{{sucess}}\n"))    : printf("{{failure}}\n");
 
-BLE                 ble;
-Gap::Address_t      address;
+BLE                      ble;
+Gap::Address_t           address;
 
 DiscoveredCharacteristic HRMCharacteristic;
-bool HRMFound =          false;
+bool                     HRMFound =          false;
 DiscoveredCharacteristic LEDCharacteristic;
-bool LEDFound =          false;
+bool                     LEDFound =          false;
 Gap::Handle_t            deviceAHandle;
-    
+
 /*
  * Call back when a service is discovered
  */
@@ -58,9 +58,9 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
         HRMCharacteristic = *characteristicP;
         HRMFound          = true;
     }
-    if (characteristicP->getUUID().getShortUUID() == 0xA001){ /* Searches for LED Characteristic*/
+    if (characteristicP->getUUID().getShortUUID() == 0xA001) { /* Searches for LED Characteristic*/
         LEDCharacteristic = *characteristicP;
-        LEDFound          = true;   
+        LEDFound          = true;
     }
 }
 
@@ -69,8 +69,8 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
  */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
 {
-    printf("Connected to: %d:%d:%d:%d:%d:%d\n", 
-            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]); 
+    printf("Connected to: %d:%d:%d:%d:%d:%d\n",
+           params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
     if (params->role == Gap::CENTRAL) {
         deviceAHandle = params->handle; /* Handle for device A so it is it possible to disconnect*/
         ASSERT_NO_FAILURE(ble.gattClient().launchServiceDiscovery(params->handle, serviceDiscoveryCallback, characteristicDiscoveryCallback));
@@ -95,23 +95,24 @@ void readCharacteristic(const GattReadCallbackParams *response)
  */
 void connectTest()
 {
-    if (!(ble.gap().getState().connected)){
-        ASSERT_NO_FAILURE(ble.gap().connect(address,Gap::ADDR_TYPE_RANDOM_STATIC,NULL,NULL));
-    }
-    else printf("Devices already connected\n");
+    if (!(ble.gap().getState().connected)) {
+        ASSERT_NO_FAILURE(ble.gap().connect(address, Gap::ADDR_TYPE_RANDOM_STATIC, NULL, NULL));
+    } else {
+	    printf("Devices already connected\n");
+	}
 }
 
 /*
  * Tests reading from to the heart rate characteristic. Devices need to be connected for this test.
  */
 void readTest(){
-    if (!(ble.gap().getState().connected)){ 
+    if (!(ble.gap().getState().connected)) {
         printf("Devices must be connected before this test can be run\n");
         return;
     }
-    if (HRMFound){
-        ASSERT_NO_FAILURE(HRMCharacteristic.read());    
-    } else{
+    if (HRMFound) {
+        ASSERT_NO_FAILURE(HRMCharacteristic.read());
+    } else {
         printf("Characteristic not found\r\n");
     }
 }
@@ -122,27 +123,28 @@ void readTest(){
  */
 void writeTest()
 {
-    if (!(ble.gap().getState().connected)){
+    if (!(ble.gap().getState().connected)) {
         printf("Devices must be connected before this test can be run\n");
         return;
     }
-    if (LEDFound){
+    if (LEDFound) {
         uint8_t write_value = 1;
-        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value),&write_value)); /* When write finishes, writeCallback is called */
-    } else{
+        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value), &write_value)); /* When write finishes, writeCallback is called */
+    } else {
         printf("Characeristic not found\r\n");
     }
 }
 
-/** 
+/**
  * Tests disconnecting devices. If it is already connected it prints a message
  */
 void disconnectTest()
 {
-    if ((ble.gap().getState().connected)){
+    if ((ble.gap().getState().connected)) {
         ASSERT_NO_FAILURE(ble.gap().disconnect(deviceAHandle, Gap::REMOTE_USER_TERMINATED_CONNECTION));
+    } else {
+	    printf("Devices not connected\n");
     }
-    else printf("Devices not connected\n");        
 }
 
 /**
@@ -151,17 +153,22 @@ void disconnectTest()
 void commandInterpreter()
 {
     char command[50];
-    while(true){
+    while (true) {
         scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
-        if (!strcmp(command, "connect")) connectTest();
-        else if (!strcmp(command, "disconnect")) disconnectTest();
-        else if (!strcmp(command, "read")) readTest();
-        else if (!strcmp(command, "write")) writeTest();
-    }    
+        if (!strcmp(command, "connect")) {
+            connectTest();
+        } else if (!strcmp(command, "disconnect")) {
+            disconnectTest();
+        } else if (!strcmp(command, "read"))                                                        {
+            readTest();
+        } else if (!strcmp(command, "write"))                                                                                                          {
+            writeTest();
+        }
+    }
 }
 
 /**
- * Call back for writing to LED characteristic. 
+ * Call back for writing to LED characteristic.
  */
 void writeCallback(const GattWriteCallbackParams *params){
     ASSERT_NO_FAILURE(LEDCharacteristic.read());
@@ -170,16 +177,16 @@ void writeCallback(const GattWriteCallbackParams *params){
 int main(void)
 {
     printf("{{end}}\n"); /* Hands control over to Python script */
-    scanf("%hhu",&address[0]);
-    scanf("%hhu",&address[1]);
-    scanf("%hhu",&address[2]);
-    scanf("%hhu",&address[3]);
-    scanf("%hhu",&address[4]);
-    scanf("%hhu",&address[5]);
-    
+    scanf("%hhu", &address[0]);
+    scanf("%hhu", &address[1]);
+    scanf("%hhu", &address[2]);
+    scanf("%hhu", &address[3]);
+    scanf("%hhu", &address[4]);
+    scanf("%hhu", &address[5]);
+
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
-    
+
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
