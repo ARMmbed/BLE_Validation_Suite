@@ -82,7 +82,6 @@ def setAddrTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''	
 def changeIntervalTest(aSer,bSer):
-	print '\nTESTING setAdvertisingInterval\n'
 	counter1 = 0
 	counter2 = 0
 	counter3 = 0
@@ -123,7 +122,6 @@ def changeIntervalTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''		
 def changePayloadTest(aSer,bSer):
-	print '\nTESTING accumulateAdvertisingPayload\n'
 	counter = 0
 	time1 = time.time()
 	while True:
@@ -145,7 +143,6 @@ def changePayloadTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''					
 def responseTest(aSer,bSer):
-	print '\nTESTING accumulateScanResponse\n'
 	counter = 0
 	time1 = time.time()
 	while True:
@@ -169,7 +166,6 @@ def responseTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''					
 def setTimeoutTest(aSer,bSer):
-	print '\nTESTING setAdvertisingTimeout\n'
 	bSer.timeout = 3
 	counter = 0
 	counter2 = 0

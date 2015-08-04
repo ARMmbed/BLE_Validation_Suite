@@ -8,6 +8,7 @@ import sys
 import threading
 import itertools
 import types
+import os.path
 from types import *
 from pprint import pprint
 import HRM_tests as HRM
@@ -63,9 +64,6 @@ def iBeaconTest(aSer, bSer):
 		return
 	passList = []
 	failList = []
-
-	# testDict = {'setAdvertisingInterval': iBeacon.changeAdTest, 'accumulateAdvertisingPayload': iBeacon.changePayloadTest, 'setAdvertisingTimeout': iBeacon.setTimeoutTest, \
-	# 			'accumulateScanResponse': iBeacon.responseTest, 'iBeaconTest': iBeacon.detectTest, 'setgetAddress': iBeacon.setAddrTest}
 	names = [iBeacon.__dict__.get(a).__name__[:-4] for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
 	funcs = [iBeacon.__dict__.get(a) for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
 	testDict = dict(zip(names, funcs))
@@ -74,7 +72,7 @@ def iBeaconTest(aSer, bSer):
 		del testDict['setAddr']
 		for i in testDict:
 			time.sleep(4)
-			print '\nRunning ' + str(i) + ' test'
+			print '\n\tRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
 			if testDict[i](aSer, bSer):
@@ -85,7 +83,7 @@ def iBeaconTest(aSer, bSer):
 	else:
 		while True:
 			time.sleep(2)
-			print '\nWhat test? -1 to finish',
+			print '\nWhat test? -1 to finish\n',
 			for i in testDict.keys():
 				print ', ' + i,
 			print ''
@@ -139,19 +137,19 @@ def HRMTest(aSer, bSer):
 	passList = []
 	failList = []
 	bSer.write('1\n')
-	# testDictA = {'setDeviceName': HRM.deviceNameTest, 'setAppearance': HRM.appearanceTest, 'testConnectionParams': HRM.connParamTest}
-	# testDictB = {'connect': HRM.connectTest, 'disconnect': HRM.disconnectTest, 'read': HRM.readTest, 'write': HRM.writeTest}
+
 	namesA = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
 	funcsA = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
 	testDictA = dict(zip(namesA, funcsA))
 	namesB = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
 	funcsB = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
 	testDictB = dict(zip(namesB, funcsB))
+
 	if '-i' not in sys.argv:
 		del testDictB['connect']
 		del testDictB['disconnect']
 		for i in testDictA:
-			print '\nRunning ' + str(i) + ' test'
+			print '\n\tRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
 			if testDictA[i](aSer, bSer):
@@ -160,6 +158,7 @@ def HRMTest(aSer, bSer):
 				failList = failList + [i]
 			time.sleep(2)
 		flushSerials(aSer, bSer)
+		print '\n\tRunning connect test\n'
 		bSer.write('connect\n')
 		if HRM.connectTestB(aSer, bSer):
 			passList = passList + ['connect']
@@ -167,7 +166,7 @@ def HRMTest(aSer, bSer):
 			failList = failList + ['connect']
 		time.sleep(2)
 		for i in testDictB:
-			print 'Running ' + str(i) + ' test'
+			print '\n\tRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			bSer.write(str(i) + '\n')
 			if testDictB[i](aSer, bSer):
@@ -175,13 +174,15 @@ def HRMTest(aSer, bSer):
 			else:
 				failList = failList + [i]
 			time.sleep(2)
-		flushSerials(aSer, bSer)	
+		flushSerials(aSer, bSer)
+		print '\n\tRunning disconnect test\n'	
 		bSer.write('disconnect\n')
 		time.sleep(2)
 		if HRM.disconnectTestB(aSer, bSer):
 			passList = passList + ['disconnect']
 		else:
 			failList = failList + ['disconnect']
+		print ''
 	else:
 		while True:
 			time.sleep(2)
@@ -255,7 +256,7 @@ def transferAddr(aSer, bSer):
 
 if __name__ == "__main__":
 	# DETECTION
-	'''
+	
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
 	aMount = getJson(0, 'mount_point')
@@ -269,23 +270,41 @@ if __name__ == "__main__":
 	aMount = getJson(1, 'mount_point')
 	bName = getJson(0, 'platform_name')
 	aName = getJson(1, 'platform_name')
+	'''
 	if len(sys.argv) < 2:
 		print 'Give test name as argument e.g. -iBeacon'
 		sys.exit()
 	#flashing
-	if sys.argv[1] == '-iBeacon':
-		flashDevice(aMount, aPort, 'A_NRF51822.hex', aName)
+	if '-f' in sys.argv:
+		index = sys.argv.index('-f')
+		try:
+			aFile = sys.argv[index + 1]
+			bFile = sys.argv[index + 2]
+			if not os.path.exists(aFile) or not os.path.exists(bFile):
+				print 'File does not exist in current directory'
+				sys.exit()
+		except IndexError:
+			print 'Two arguments required'
+			sys.exit()
+		flashDevice(aMount, aPort, aFile, aName)
 		print ''
-		flashDevice(bMount, bPort, 'B_NRF51822.hex', aName)
-	elif sys.argv[1] == '-iBeaconNUC':
-		flashDevice(aMount, aPort, 'A_NUC_NUCLEO_F411RE.bin', aName)#'NUCLEO_F401RE')
-		flashDevice(bMount, bPort, 'B_NRF51822.hex', bName)
-	elif sys.argv[1] == '-HRM':
-		flashDevice(aMount, aPort, 'AHRM_NRF51822.hex', aName)
-		flashDevice(bMount, bPort, 'BHRM_NRF51822.hex', bName)
+		flashDevice(bMount, bPort, bFile, bName)
 	else:
-		print 'invalid test name'
-		sys.exit()
+		if '-iBeacon' in sys.argv:
+			flashDevice(aMount, aPort, 'A_NRF51822.hex', aName)
+			print ''
+			flashDevice(bMount, bPort, 'B_NRF51822.hex', aName)
+		elif '-iBeaconNUC' in sys.argv:
+			flashDevice(aMount, aPort, 'A_NUC_NUCLEO_F411RE.bin', aName)#'NUCLEO_F401RE')
+			print ''
+			flashDevice(bMount, bPort, 'B_NRF51822.hex', bName)
+		elif '-HRM' in sys.argv:
+			flashDevice(aMount, aPort, 'AHRM_NRF51822.hex', aName)
+			print ''
+			flashDevice(bMount, bPort, 'BHRM_NRF51822.hex', bName)
+		else:
+			print 'Invalid test name'
+			sys.exit()
 		
 	#Opens ports for logging 
 	print 'Opening serial ports from devices to PC\n'
@@ -296,9 +315,9 @@ if __name__ == "__main__":
 
 	transferAddr(aSer, bSer)
 
-	if 'iBeacon' in sys.argv[1]:
+	if '-iBeacon' in sys.argv:
 		iBeaconTest(aSer, bSer)
-	elif sys.argv[1] == '-HRM':
+	elif '-HRM' in sys.argv:
 		HRMTest(aSer, bSer)
 	else:
 		sys.exit()

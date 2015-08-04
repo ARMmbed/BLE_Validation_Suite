@@ -20,10 +20,12 @@ or run $ python Validation_Suite.py -iBeacon
 
 to test HRM or iBeacon BLE Capibilities
 
-use the flag -i to run in interactive mode where you can select individual tests to be run.
-
 ** A.cpp, B.cpp are used for the iBeacon tests for device A and B. 
 AHRM.cpp and BHRM.cpp are used for the HRM tests for device A and B
+
+FLAGS:
+	-f used to select which files are to be flashed to device A and B e.g. Validation_Suite.py -HRM -f AHRM.cpp BHRM.cpp
+	-i interactive mode, used to select manually a test to run. e.g. Validation_Suite.py -HRM -i
 
 # Adding new tests
 

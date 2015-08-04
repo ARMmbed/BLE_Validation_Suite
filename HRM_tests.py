@@ -45,9 +45,10 @@ def connectTestB(aSer,bSer):
 @param aSer the serial port for device A
 '''
 def setDeviceNameTestA(aSer,bSer):
+	print 'Setting Device name to Josh-test'
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
-		print 'device must be disconnected'
+		print 'Device must be disconnected'
 		return False
 	if '{{success}}' not in outputB:
 		print outputB,
@@ -56,6 +57,7 @@ def setDeviceNameTestA(aSer,bSer):
 		print outputB,
 	deviceName = aSer.readline()
 	deviceNameIn = aSer.readline()
+	print 'MBED[B]: Device name: ' + deviceName,
 	if deviceName == deviceNameIn:
 		return True
 	else:
@@ -65,9 +67,10 @@ def setDeviceNameTestA(aSer,bSer):
 @param aSer the serial port for device A
 '''
 def appearanceTestA(aSer,bSer):
+	print 'Setting appearance to GENERIC_PHONE (64)'
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
-		print 'device must be disconnected'
+		print 'Device must be disconnected'
 		return False
 	if '{{success}}' not in outputB:
 		print outputB,
@@ -75,6 +78,7 @@ def appearanceTestA(aSer,bSer):
 	if '{{success}}' not in outputB:
 		print outputB,
 	appearance = aSer.readline()
+	print 'MBED[B]: Appearance = ' + appearance,
 	if '64' in appearance:
 		return True
 	else:
@@ -86,9 +90,13 @@ def appearanceTestA(aSer,bSer):
 @param bSer teh serial port for device B
 '''
 def connParamTestA(aSer,bSer):
+	print 'Setting minConnectionInterval to 50'
+	print 'Setting maxConnectionInterval to 500'
+	print 'Setting slave to 0'
+	print 'Setting connectionSupervisionTimeout to 500'
 	getConn = aSer.readline()
 	if 'Device must be disconnected' in getConn:
-		print 'device must be disconnected'
+		print 'Device must be disconnected'
 		return False
 	setConn = aSer.readline()
 	if '{{success}}' not in getConn:
@@ -101,9 +109,11 @@ def connParamTestA(aSer,bSer):
 	connSup = aSer.readline()
 	if '{{failure}}' in getConn or '{{failure}}' in setConn:
 		return False
-	else:
-		return True
-	if '50' in minconn and '500' in maxconn and '0' in slave and '500' in connSup:
+	print 'minConnectionInterval: ' + minConn,
+	print 'maxConnectionInterval: ' + maxConn,
+	print 'slave: ' + slave,
+	print 'connectionSupervisionTimeout: ' + connSup,
+	if '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup:
 		return True
 	else:
 		return False
@@ -113,9 +123,10 @@ def connParamTestA(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def readTestB(aSer,bSer):
+	print 'Reading HRM characteristic'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
-		print 'device must be connected'
+		print 'Device must be connected'
 		return False
 	if 'not found' in outputB:
 		print 'HRM Characteristic not found'
@@ -134,9 +145,10 @@ def readTestB(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def writeTestB(aSer,bSer):
+	print 'Writing 1 to LED characteristic'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
-		print 'device must be connected'
+		print 'Device must be connected'
 		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
@@ -154,20 +166,23 @@ def writeTestB(aSer,bSer):
 @param bSer the serial object for device B
 '''	
 def notificationTestB(aSer, bSer):
+	print 'Enabling notifications'
 	writeError = bSer.readline()
 	if '{{failure}}' in writeError:
 		print 'MBED[B]: ' + writeError,
 		return False
 	if 'Devices must be connected' in writeError:
-		print 'device must be connected'
+		print 'Device must be connected'
 		return False
 	Sync = bSer.readline()
+	print 'Changing button characteristic to 1'
 	aSer.write('notification\n')
 	hvxCallback = bSer.readline()
 	print 'MBED[B]: ' + hvxCallback
 	if 'Button' not in hvxCallback:
 		return False
 	return True
+
 '''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
 @param aSer the serial object for device A
 @param bSer the serial object for device B 
