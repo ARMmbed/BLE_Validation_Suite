@@ -61,8 +61,9 @@ def detectTest(aSer,bSer):
 '''
 def setAddrTest(aSer,bSer):
 	setAddrError = aSer.readline()
+	print setAddrError
 	getAddrError = aSer.readline()
-	Pass = True
+	print getAddrError
 	if '{{failure}}' in setAddrError:
 		print 'MBED[A]: ' + setAddrError,
 		return False
@@ -192,3 +193,29 @@ def setTimeoutTest(aSer,bSer):
 		if time.time() - time1 > TIMEOUT*2:
 			return False
 		counter2 = counter2 + 1
+
+
+def shutdownTest(aSer, bSer):
+	stopAd = aSer.readline()
+	if '{{failure}}' in stopAd:
+		print 'MBED[A]: ' + stopAd,
+	shutdown = aSer.readline()
+	if '{{failure}}' in shutdown:
+		print 'MBED[A]: ' + shutdown,
+	bleinit = aSer.readline()
+	if '{{failure}}' in bleinit:
+		print 'MBED[A]: ' + bleinit,
+	startAd = aSer.readline()
+	if '{{failure}}' in startAd:
+		print 'MBED[A]: ' + startAd,
+	time1 = time.time()
+	while True:
+		outputB = bSer.readline()
+		if '{{failure}}' in outputB:
+			print 'MBED[B]: ' + outputB,
+			return False
+		if 'Data: 6' in outputB:
+			print outputB,
+			return True
+		if time.time() - time1 > 30:
+			return False

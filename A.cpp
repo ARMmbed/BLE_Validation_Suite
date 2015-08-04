@@ -58,7 +58,6 @@ void setAddrTest(void)
 
     const static Gap::Address_t newAddress = {110, 100, 100, 100, 100, 100}; /* A randomly chosen address for assigning to the peripheral. */
     ASSERT_NO_FAILURE(ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, newAddress));
-
     Gap::Address_t fetchedAddress;
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, fetchedAddress));
     printf("%d:%d:%d:%d:%d:%d\n", newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5]);
@@ -152,6 +151,15 @@ void resetStateForNextTest(void)
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
 }
 
+void shutdownTest(void)
+{
+    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
+    ASSERT_NO_FAILURE(ble.shutdown());
+    ASSERT_NO_FAILURE(ble.init());
+    ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+        
+}
+
 /**
  * Controls which tests are run from input from PC
  */
@@ -170,6 +178,7 @@ void commandInterpreter(void)
         else if (!strcmp(command, "response"))      changeScanRes();
         else if (!strcmp(command, "detect"))        setupIBeaconTest();
         else if (!strcmp(command, "setAddr"))       setAddrTest();
+        else if (!strcmp(command, "shutdown"))      shutdownTest();
 
         /* synchronize with the host python script */
         unsigned synchroniztion;

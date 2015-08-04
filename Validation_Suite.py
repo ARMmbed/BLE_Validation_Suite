@@ -71,7 +71,9 @@ def iBeaconTest(aSer, bSer):
 	testDict = dict(zip(names, funcs))
 
 	if '-i' not in sys.argv:
+		del testDict['setAddr']
 		for i in testDict:
+			time.sleep(4)
 			print '\nRunning ' + str(i) + ' test'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
@@ -79,7 +81,7 @@ def iBeaconTest(aSer, bSer):
 				passList = passList + [i]
 			else:
 				failList = failList + [i]
-			time.sleep(2)
+			aSer.write('1\n')
 	else:
 		while True:
 			time.sleep(2)

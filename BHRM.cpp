@@ -20,7 +20,7 @@
 #include "ble/DiscoveredService.h"
 #define DUMP_ADV_DATA 0
 
-#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", # X, __LINE__, (X));
+#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
 #define CHECK_EQUALS(X, Y)     ((X)==(Y)) ?            (printf("{{sucess}}\n"))    : printf("{{failure}}\n");
 
 BLE                      ble;
@@ -171,7 +171,7 @@ void notificationTest()
                                    sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
                                    reinterpret_cast<const uint8_t *>(&value)));    
     } else {
-        printf("Characteristic not found\r\n");    
+        printf("Characteristic not found\r\r");    
     }
 }
 
