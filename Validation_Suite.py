@@ -69,10 +69,9 @@ def iBeaconTest(aSer, bSer):
 	testDict = dict(zip(names, funcs))
 
 	if '-i' not in sys.argv:
-		del testDict['setAddr']
 		for i in testDict:
 			time.sleep(4)
-			print '\n\tRunning ' + str(i) + ' test\n'
+			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
 			if testDict[i](aSer, bSer):
@@ -149,7 +148,7 @@ def HRMTest(aSer, bSer):
 		del testDictB['connect']
 		del testDictB['disconnect']
 		for i in testDictA:
-			print '\n\tRunning ' + str(i) + ' test\n'
+			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
 			if testDictA[i](aSer, bSer):
@@ -158,7 +157,7 @@ def HRMTest(aSer, bSer):
 				failList = failList + [i]
 			time.sleep(2)
 		flushSerials(aSer, bSer)
-		print '\n\tRunning connect test\n'
+		print '\nRunning connect test\n'
 		bSer.write('connect\n')
 		if HRM.connectTestB(aSer, bSer):
 			passList = passList + ['connect']
@@ -166,7 +165,7 @@ def HRMTest(aSer, bSer):
 			failList = failList + ['connect']
 		time.sleep(2)
 		for i in testDictB:
-			print '\n\tRunning ' + str(i) + ' test\n'
+			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			bSer.write(str(i) + '\n')
 			if testDictB[i](aSer, bSer):
@@ -175,7 +174,7 @@ def HRMTest(aSer, bSer):
 				failList = failList + [i]
 			time.sleep(2)
 		flushSerials(aSer, bSer)
-		print '\n\tRunning disconnect test\n'	
+		print '\nRunning disconnect test\n'	
 		bSer.write('disconnect\n')
 		time.sleep(2)
 		if HRM.disconnectTestB(aSer, bSer):

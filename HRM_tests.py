@@ -34,7 +34,7 @@ def connectTestB(aSer,bSer):
 		if 'Devices already connected' in outputB:
 			return True
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'Connected' in outputB:
 			time.sleep(2)
 			return True
@@ -45,19 +45,23 @@ def connectTestB(aSer,bSer):
 @param aSer the serial port for device A
 '''
 def setDeviceNameTestA(aSer,bSer):
-	print 'Setting Device name to Josh-test'
+	print '\tSetting Device name to Josh-test\n'
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
-		print 'Device must be disconnected'
+		print '\tDevice must be disconnected'
 		return False
 	if '{{success}}' not in outputB:
-		print outputB,
+		print '\tMBED[B]: ' + outputB,
+	if '{{failure}}' in outputB:
+		return False
 	outputB = aSer.readline()
 	if '{{success}}' not in outputB:
-		print outputB,
+		print '\tMBED[B]: ' +outputB,
+	if '{{failure}}' in outputB:
+		return False
 	deviceName = aSer.readline()
 	deviceNameIn = aSer.readline()
-	print 'MBED[B]: Device name: ' + deviceName,
+	print '\tMBED[B]: Device name: ' + deviceName,
 	if deviceName == deviceNameIn:
 		return True
 	else:
@@ -67,18 +71,23 @@ def setDeviceNameTestA(aSer,bSer):
 @param aSer the serial port for device A
 '''
 def appearanceTestA(aSer,bSer):
-	print 'Setting appearance to GENERIC_PHONE (64)'
+	print '\tSetting appearance to GENERIC_PHONE (64)\n'
+	
 	outputB = aSer.readline()
 	if 'Device must be disconnected' in outputB:
-		print 'Device must be disconnected'
+		print '\tDevice must be disconnected'
 		return False
 	if '{{success}}' not in outputB:
 		print outputB,
+	if '{{failure}}' in outputB:
+		return False
 	outputB = aSer.readline()
 	if '{{success}}' not in outputB:
 		print outputB,
+	if '{{failure}}' in outputB:
+		return False
 	appearance = aSer.readline()
-	print 'MBED[B]: Appearance = ' + appearance,
+	print '\tMBED[B]: Appearance = ' + appearance,
 	if '64' in appearance:
 		return True
 	else:
@@ -90,29 +99,43 @@ def appearanceTestA(aSer,bSer):
 @param bSer teh serial port for device B
 '''
 def connParamTestA(aSer,bSer):
-	print 'Setting minConnectionInterval to 50'
-	print 'Setting maxConnectionInterval to 500'
-	print 'Setting slave to 0'
-	print 'Setting connectionSupervisionTimeout to 500'
 	getConn = aSer.readline()
-	if 'Device must be disconnected' in getConn:
-		print 'Device must be disconnected'
+	if '{{failure}}' in getConn:
 		return False
+	if 'Device must be disconnected' in getConn:
+		print '\tDevice must be disconnected'
+		return False
+	print '\tSetting minConnectionInterval to 50'
+	print '\tSetting maxConnectionInterval to 500'
+	print '\tSetting slave to 0'
+	print '\tSetting connectionSupervisionTimeout to 500\n'
 	setConn = aSer.readline()
 	if '{{success}}' not in getConn:
 		print getConn,
 	if '{{success}}' not in setConn:
 		print setConn,
-	minConn = aSer.readline()
-	maxConn = aSer.readline()
-	slave = aSer.readline()
-	connSup = aSer.readline()
-	if '{{failure}}' in getConn or '{{failure}}' in setConn:
+	if '{{failure}}' in setConn:
 		return False
-	print 'minConnectionInterval: ' + minConn,
-	print 'maxConnectionInterval: ' + maxConn,
-	print 'slave: ' + slave,
-	print 'connectionSupervisionTimeout: ' + connSup,
+	minConn = aSer.readline()
+	if '{{failure}}' in minConn:
+		print '\tMBED[A]: ' + minConn,
+		return False
+	maxConn = aSer.readline()
+	if '{{failure}}' in maxConn:
+		print '\tMBED[A]: ' + maxConn,
+		return False
+	slave = aSer.readline()
+	if '{{failure}}' in slave:
+		print '\tMBED[A]: ' + slave,
+		return False
+	connSup = aSer.readline()
+	if '{{failure}}' in connSup:
+		print '\tMBED[A]: ' + connSup,
+		return False
+	print '\tminConnectionInterval: ' + minConn,
+	print '\tmaxConnectionInterval: ' + maxConn,
+	print '\tslave: ' + slave,
+	print '\tconnectionSupervisionTimeout: ' + connSup,
 	if '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup:
 		return True
 	else:
@@ -123,21 +146,24 @@ def connParamTestA(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def readTestB(aSer,bSer):
-	print 'Reading HRM characteristic'
+	print 'Reading HRM characteristic\n'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
-		print 'Device must be connected'
+		print '\tDevice must be connected'
 		return False
 	if 'not found' in outputB:
-		print 'HRM Characteristic not found'
+		print '\tHRM Characteristic not found'
+		return False
+	if '{{failure}}' in outputB:
+		print '\tMBED[B]: ' + outputB,
 		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
-		print 'MBED[B]: ' + outputB,
+		print '\tMBED[B]: ' + outputB,
 	if 'HRM' in outputB:
 		return True
 	else:
-		print 'MBED[B]: ' + outputB
+		print '\tMBED[B]: ' + outputB
 		return False
 
 '''! test to write "1" to device A's LED characteristic from device B and read back to verify, only runnable when devices are connected
@@ -145,17 +171,21 @@ def readTestB(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def writeTestB(aSer,bSer):
-	print 'Writing 1 to LED characteristic'
+	print 'Writing 1 to LED characteristic\n'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
-		print 'Device must be connected'
+		print '\tDevice must be connected'
 		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
-		print 'MBED[B]: ' + outputB,
+		print '\tMBED[B]: ' + outputB,
+	if '{{failure}}' in outputB:
+		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
-		print 'MBED[B]: ' + outputB,
+		print '\tMBED[B]: ' + outputB,
+	if '{{failure}}' in outputB:
+		return False
 	if 'LED: 1' in outputB:
 		return True
 	else:
@@ -166,19 +196,19 @@ def writeTestB(aSer,bSer):
 @param bSer the serial object for device B
 '''	
 def notificationTestB(aSer, bSer):
-	print 'Enabling notifications'
+	print 'Enabling notifications\n'
 	writeError = bSer.readline()
 	if '{{failure}}' in writeError:
-		print 'MBED[B]: ' + writeError,
+		print '\tMBED[B]: ' + writeError,
 		return False
 	if 'Devices must be connected' in writeError:
-		print 'Device must be connected'
+		print '\tDevice must be connected'
 		return False
 	Sync = bSer.readline()
-	print 'Changing button characteristic to 1'
+	print '\tChanging button characteristic to 1'
 	aSer.write('notification\n')
 	hvxCallback = bSer.readline()
-	print 'MBED[B]: ' + hvxCallback
+	print '\tMBED[B]: ' + hvxCallback
 	if 'Button' not in hvxCallback:
 		return False
 	return True
@@ -190,7 +220,7 @@ def notificationTestB(aSer, bSer):
 def disconnectTestB(aSer,bSer):
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB:
-		print 'MBED[B]: ' + outputB,
+		print '\tMBED[B]: ' + outputB,
 		return False
 	else:
 		return True	

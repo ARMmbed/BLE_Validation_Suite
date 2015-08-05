@@ -6,7 +6,7 @@ import threading
 from types import *
 from Validation_Suite import *
 
-TIMEOUT = 30
+TIMEOUT = 60
 
 '''! Calculates if inputs are with approximately equal to each other within a range reutrn Boolean
 @param x first input
@@ -26,15 +26,16 @@ def approxEqual(x, y, range):
 def detectTest(aSer,bSer):
 	interval = aSer.readline()
 	if '{{failure}}' in interval:
-		print 'MBED[A]: ' + interval,
+		print '\tMBED[A]: ' + interval,
+		return False
 	timeout = aSer.readline()
 	if '{{failure}}' in timeout:
-		print 'MBED[A]: ' + timeout,
+		print '\tMBED[A]: ' + timeout,
+		return False
 	startAdvertisingErrorCode = aSer.readline()
 	if '{{failure}}' in startAdvertisingErrorCode:
-		print 'MBED[A]: ' + startAdvertisingErrorCode,
-
-	print '\nTESTING SENDING ADVERTISEMENTS\n'
+		print '\tMBED[A]: ' + startAdvertisingErrorCode,
+		return False
 	counter = 0
 	counter2 = 0
 	time1 = time.time()
@@ -42,10 +43,10 @@ def detectTest(aSer,bSer):
 		outputB = bSer.readline()
 		print outputB,
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 			return False
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'Data' in outputB:
 			counter = counter + 1
 		if counter == 5:
@@ -60,18 +61,18 @@ def detectTest(aSer,bSer):
 @param bSer the serial object for device B
 '''
 def setAddrTest(aSer,bSer):
+	print '\tSetting BLE MAC Address to 110:100:100:100:100:100'
 	setAddrError = aSer.readline()
-	print setAddrError
-	getAddrError = aSer.readline()
-	print getAddrError
 	if '{{failure}}' in setAddrError:
-		print 'MBED[A]: ' + setAddrError,
+		print '\tMBED[A]: ' + setAddrError,
 		return False
+	getAddrError = aSer.readline()
 	if '{{failure}}' in getAddrError:
-		print 'MBED[A]: ' + getAddrError,
+		print '\tMBED[A]: ' + getAddrError,
 		return False
 	addr1 = aSer.readline()
 	addr2 = aSer.readline()
+	print '\tMBED[B]: BLE MAC Address: ' + addr2
 	if addr1 == addr2:
 		return True
 	else:
@@ -93,17 +94,17 @@ def changeIntervalTest(aSer,bSer):
 	while True:
 		outputB = bSer.readline()
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 			return False
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'Data' in outputB:
 			time1 = time.time()
 			uptime = time1 - time2
 			if approxEqual(uptime,0.5,0.2):
 				counter1 = counter1 + 1
 				avg1 = avg1 + uptime
-			print 'PC: Time interval: ' + str(uptime)
+			print '\tPC: Time interval: ' + str(uptime)
 			time2 = time.time()
 			if counter1 == 5:
 				avg1 = avg1/counter1
@@ -114,7 +115,7 @@ def changeIntervalTest(aSer,bSer):
 			elif counter3 > 30:
 				return False
 			counter3 = counter3 + 1
-			if time.time() - time3 > TIMEOUT * 1.5:
+			if time.time() - time3 > TIMEOUT:
 				return False
 
 '''! test to see if the advertisement payload can be changed
@@ -127,10 +128,10 @@ def changePayloadTest(aSer,bSer):
 	while True:
 		outputB = bSer.readline()
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 			return False
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'Data: 123' in outputB:
 			return True
 		if counter == 15:
@@ -148,10 +149,10 @@ def responseTest(aSer,bSer):
 	while True:
 		outputB = bSer.readline()
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 			return False
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'ScanResp: 1' in outputB:
 			return True
 		if 'ScanResp: 0' in outputB:
@@ -173,10 +174,10 @@ def setTimeoutTest(aSer,bSer):
 	while True:
 		outputB = bSer.readline()
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
-			break
+			print '\tMBED[B]: ' + outputB,
+			return False
 		if '{{success}}' not in outputB and outputB != '':
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 		if 'Data' in outputB:
 			counter = 0
 		if outputB == '':
@@ -186,7 +187,7 @@ def setTimeoutTest(aSer,bSer):
 				return True
 			else:
 				return False
-		if time.time() - time1 > TIMEOUT*2:
+		if time.time() - time1 > TIMEOUT:
 			return False
 		counter2 = counter2 + 1
 
@@ -194,24 +195,28 @@ def setTimeoutTest(aSer,bSer):
 def shutdownTest(aSer, bSer):
 	stopAd = aSer.readline()
 	if '{{failure}}' in stopAd:
-		print 'MBED[A]: ' + stopAd,
+		print '\tMBED[A]: ' + stopAd,
+		return False
 	shutdown = aSer.readline()
 	if '{{failure}}' in shutdown:
-		print 'MBED[A]: ' + shutdown,
+		print '\tMBED[A]: ' + shutdown,
+		return False
 	bleinit = aSer.readline()
 	if '{{failure}}' in bleinit:
-		print 'MBED[A]: ' + bleinit,
+		print '\tMBED[A]: ' + bleinit,
+		return False
 	startAd = aSer.readline()
 	if '{{failure}}' in startAd:
-		print 'MBED[A]: ' + startAd,
+		print '\tMBED[A]: ' + startAd,
+		return False
 	time1 = time.time()
 	while True:
 		outputB = bSer.readline()
 		if '{{failure}}' in outputB:
-			print 'MBED[B]: ' + outputB,
+			print '\tMBED[B]: ' + outputB,
 			return False
 		if 'Data: 6' in outputB:
 			print outputB,
 			return True
-		if time.time() - time1 > 30:
+		if time.time() - time1 > TIMEOUT:
 			return False
