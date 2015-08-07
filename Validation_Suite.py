@@ -64,8 +64,12 @@ def iBeaconTest(aSer, bSer):
 		return
 	passList = []
 	failList = []
+
+	# list comprehensions for generating lists of functions and tests from iBeacon_tests.py
 	names = [iBeacon.__dict__.get(a).__name__[:-4] for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
 	funcs = [iBeacon.__dict__.get(a) for a in dir(iBeacon) if isinstance(iBeacon.__dict__.get(a), types.FunctionType) and 'Test' in iBeacon.__dict__.get(a).__name__]
+
+	# dictionary of pairs of function and function names
 	testDict = dict(zip(names, funcs))
 
 	if '-i' not in sys.argv:
@@ -82,7 +86,7 @@ def iBeaconTest(aSer, bSer):
 	else:
 		while True:
 			time.sleep(2)
-			print '\nWhat test? -1 to finish\n',
+			print '\nWhat test? -1 to finish',
 			for i in testDict.keys():
 				print ', ' + i,
 			print ''
@@ -106,7 +110,7 @@ def iBeaconTest(aSer, bSer):
 			else:
 				if testInput not in passList:
 					failList = (list(set(failList + [testInput])))
-			
+			flushSerials(aSer, bSer)
 			aSer.write('1\n')
 	print 'SUCCESSFUL TESTS: {0}/{1}'.format(len(passList),len(passList + failList))
 	print 'TESTS PASSED: ',
@@ -137,11 +141,16 @@ def HRMTest(aSer, bSer):
 	failList = []
 	bSer.write('1\n')
 
+	# list comprehensions for generating lists of functions and tests from HRM_tests.py
 	namesA = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
 	funcsA = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
+
+	# dictionary of pairs of function and function names
 	testDictA = dict(zip(namesA, funcsA))
+
 	namesB = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
 	funcsB = [HRM.__dict__.get(a) for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestB' in HRM.__dict__.get(a).__name__]
+
 	testDictB = dict(zip(namesB, funcsB))
 
 	if '-i' not in sys.argv:

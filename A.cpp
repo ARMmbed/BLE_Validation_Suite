@@ -166,7 +166,6 @@ void shutdownTest(void)
 void commandInterpreter(void)
 {
     const size_t MAX_SIZEOF_TESTNAME = 50;
-
     while (true) {
         char command[MAX_SIZEOF_TESTNAME];
         scanf("%s", command); /* fetch the testname from the host python script. */

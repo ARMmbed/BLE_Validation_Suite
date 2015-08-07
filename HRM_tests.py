@@ -25,21 +25,23 @@ def aSerialRead(aSer, str):
 @param bSer serial port of device B
 '''
 def connectTestB(aSer,bSer):
-	thread = threading.Thread(target = aSerialRead, args = (aSer,'MBED[A]: ',))
+	thread = threading.Thread(target = aSerialRead, args = (aSer,'\tMBED[A]: ',))
 	thread.daemon = True
 	thread.start()
-	time1 = time.time()
-	while(True):
+	startTime = time.time()
+	result = False
+	while time.time() - startTime < TIMEOUT:
 		outputB = bSer.readline()
 		if 'Devices already connected' in outputB:
-			return True
+			result = True
+			break
 		if '{{success}}' not in outputB and outputB != '':
 			print '\tMBED[B]: ' + outputB,
 		if 'Connected' in outputB:
 			time.sleep(2)
-			return True
-		if time.time() - time1 > TIMEOUT:
-			return False
+			result = True
+			break
+	return result
 		
 '''! tests setDeviceName and getDeviceName functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
@@ -56,17 +58,14 @@ def setDeviceNameTestA(aSer,bSer):
 		return False
 	outputB = aSer.readline()
 	if '{{success}}' not in outputB:
-		print '\tMBED[B]: ' +outputB,
+		print '\tMBED[B]: ' + outputB,
 	if '{{failure}}' in outputB:
 		return False
 	deviceName = aSer.readline()
 	deviceNameIn = aSer.readline()
 	print '\tMBED[B]: Device name: ' + deviceName,
-	if deviceName == deviceNameIn:
-		return True
-	else:
-		return False
-
+	return deviceName == deviceNameIn
+		
 '''! tests setAppearance and getAppearance functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
@@ -78,7 +77,7 @@ def appearanceTestA(aSer,bSer):
 		print '\tDevice must be disconnected'
 		return False
 	if '{{success}}' not in outputB:
-		print outputB,
+		print '\tMBED[B]: ' + outputB,
 	if '{{failure}}' in outputB:
 		return False
 	outputB = aSer.readline()
@@ -88,11 +87,7 @@ def appearanceTestA(aSer,bSer):
 		return False
 	appearance = aSer.readline()
 	print '\tMBED[B]: Appearance = ' + appearance,
-	if '64' in appearance:
-		return True
-	else:
-		print outputB
-		return False
+	return '64' in appearance
 
 '''! tests the get/setPreferredConnectionParams functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
@@ -136,10 +131,7 @@ def connParamTestA(aSer,bSer):
 	print '\tmaxConnectionInterval: ' + maxConn,
 	print '\tslave: ' + slave,
 	print '\tconnectionSupervisionTimeout: ' + connSup,
-	if '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup:
-		return True
-	else:
-		return False
+	return '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup
 	
 '''! test to read device A's HRM characteristic from device B, only runnable when devices are connected
 @param aSer the serial object for device A
@@ -151,20 +143,16 @@ def readTestB(aSer,bSer):
 	if 'Devices must be connected' in outputB:
 		print '\tDevice must be connected'
 		return False
-	if 'not found' in outputB:
+	elif 'not found' in outputB:
 		print '\tHRM Characteristic not found'
 		return False
-	if '{{failure}}' in outputB:
+	elif '{{failure}}' in outputB:
 		print '\tMBED[B]: ' + outputB,
 		return False
 	outputB = bSer.readline()
 	if '{{success}}' not in outputB and outputB != '':
 		print '\tMBED[B]: ' + outputB,
-	if 'HRM' in outputB:
-		return True
-	else:
-		print '\tMBED[B]: ' + outputB
-		return False
+	return 'HRM' in outputB
 
 '''! test to write "1" to device A's LED characteristic from device B and read back to verify, only runnable when devices are connected
 @param aSer the serial object for device A
@@ -186,10 +174,7 @@ def writeTestB(aSer,bSer):
 		print '\tMBED[B]: ' + outputB,
 	if '{{failure}}' in outputB:
 		return False
-	if 'LED: 1' in outputB:
-		return True
-	else:
-		return False
+	return 'LED: 1' in outputB
 
 '''!
 @param aSer the serial object for device A
@@ -209,9 +194,7 @@ def notificationTestB(aSer, bSer):
 	aSer.write('notification\n')
 	hvxCallback = bSer.readline()
 	print '\tMBED[B]: ' + hvxCallback
-	if 'Button' not in hvxCallback:
-		return False
-	return True
+	return 'Button' in hvxCallback
 
 '''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
 @param aSer the serial object for device A
@@ -219,8 +202,8 @@ def notificationTestB(aSer, bSer):
 '''
 def disconnectTestB(aSer,bSer):
 	outputB = bSer.readline()
+	result = True
 	if '{{success}}' not in outputB:
 		print '\tMBED[B]: ' + outputB,
-		return False
-	else:
-		return True	
+		result = False
+	return result
