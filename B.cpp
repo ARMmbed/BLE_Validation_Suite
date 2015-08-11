@@ -17,8 +17,16 @@
 #include "mbed.h"
 #include "BLE.h"
 
-#define ASSERT_NO_FAILURE(X) (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u\r\n", #X, __LINE__);
-#define CHECK_EQUALS(X,Y)    ((X) == (Y)) ? (printf("{{sucess}}\r\n")) : printf("{{failure}}\r\n");
+#define ASSERT_NO_FAILURE(CMD) do { \
+                    ble_error_t error = (CMD); \
+                    if (error == BLE_ERROR_NONE){ \
+                        printf("{{success}}\r\n"); \
+                    } else{ \
+                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+                        return; \
+                    } \
+                    }while (0)
+#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE ble;
 Gap::Address_t peerAddress;
@@ -48,4 +56,5 @@ int main(void)
 
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */, 0, true /* active scanning */));
     ASSERT_NO_FAILURE(ble.gap().startScan(advertisementCallback));
+    printf("ASSERTIONS DONE\r\n");
 }

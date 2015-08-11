@@ -34,6 +34,29 @@ def flashDevice(mount,serial,file,device):
 	subprocess.call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run'])
 	return 
 
+def checkInit(ser, str):
+	result = True
+	while True:
+		output = ser.readline()
+		if 'ASSERTIONS DONE' in output:
+			break
+		if '{{success}}' not in output:
+			print '\tMBED[{0}]: '.format(str) + output,
+		if 'Device must be' in output:
+			result = None
+			break
+		if 'not found' in output:
+			result = False
+			break
+		if '{{failure}}' in output:
+			result = False
+			break
+	return result
+
+'''! flushes the serial ports for device A and B
+@param aSer the serial object for device A
+@param bSer the serial object for device B
+'''
 def flushSerials(aSer, bSer):
 	bSer.flushInput()
 	bSer.flushOutput()
@@ -47,21 +70,26 @@ def flushSerials(aSer, bSer):
 @param bSer the serial object for device B 
 '''
 def iBeaconTest(aSer, bSer):
-	bleInitCheck = bSer.readline()
-	if '{{failure}}' in bleInitCheck:
-		print 'MBED[B]: ' + bleInitCheck,
-		print 'Test cannot continue without ble.init(). Test ending'
+	# bleInitCheck = bSer.readline()
+	# if '{{failure}}' in bleInitCheck:
+	# 	print 'MBED[B]: ' + bleInitCheck,
+	# 	print 'Test cannot continue without ble.init(). Test ending'
+	# 	return
+	# setScanParamsCheck = bSer.readline()
+	# if '{{failure}}' in setScanParamsCheck:
+	# 	print 'MBED[B]: ' + setScanParamsCheck,
+	# 	print 'Test cannot continue without setScanParams. Test ending'
+	# 	return
+	# startScanCheck = bSer.readline()
+	# if '{{failure}}' in startScanCheck:
+	# 	print 'MBED[B]: ' + startScanCheck,
+	# 	print 'Test cannot continue without startScan. Test ending'		
+	# 	return
+	result = checkInit(bSer, 'B')
+	if result == False:
+		print 'Initial requirements failed. Test ending'
 		return
-	setScanParamsCheck = bSer.readline()
-	if '{{failure}}' in setScanParamsCheck:
-		print 'MBED[B]: ' + setScanParamsCheck,
-		print 'Test cannot continue without setScanParams. Test ending'
-		return
-	startScanCheck = bSer.readline()
-	if '{{failure}}' in startScanCheck:
-		print 'MBED[B]: ' + startScanCheck,
-		print 'Test cannot continue without startScan. Test ending'		
-		return
+
 	passList = []
 	failList = []
 
@@ -78,7 +106,10 @@ def iBeaconTest(aSer, bSer):
 			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
-			if testDict[i](aSer, bSer):
+			result = testDict[i](aSer, bSer)
+			if result is None:
+				pass
+			elif result:
 				passList = passList + [i]
 			else:
 				failList = failList + [i]
@@ -101,12 +132,13 @@ def iBeaconTest(aSer, bSer):
 			flushSerials(aSer, bSer)
 			print ''
 			aSer.write(str(testInput) + '\n')
-			
-			if (funcTest(aSer, bSer)):
+			result = funcTest(aSer, bSer)
+			if result is None:
+				pass
+			elif result:
 				if testInput in failList:
 					failList.remove(testInput)
 				passList = (list(set(passList + [testInput])))
-
 			else:
 				if testInput not in passList:
 					failList = (list(set(failList + [testInput])))
@@ -127,16 +159,21 @@ def iBeaconTest(aSer, bSer):
 @param bSer the serial object for device B
 '''
 def HRMTest(aSer, bSer):
-	bleInitCheck = bSer.readline()
-	if '{{failure}}' in bleInitCheck:
-		print 'MBED[B]: ' + bleInitCheck,
-		print 'Test cannot continue with ble.init. Test ending'
-		return 
-	setScanParamsOutput = bSer.readline()
-	if '{{failure}}' in setScanParamsOutput:
-		print 'MBED[B]: ' + setScanParamsOutput,
-		print 'Test cannot continue without setScanParams. Test ending'
-		return 
+	# bleInitCheck = bSer.readline()
+	# if '{{failure}}' in bleInitCheck:
+	# 	print 'MBED[B]: ' + bleInitCheck,
+	# 	print 'Test cannot continue with ble.init. Test ending'
+	# 	return 
+	# setScanParamsOutput = bSer.readline()
+	# if '{{failure}}' in setScanParamsOutput:
+	# 	print 'MBED[B]: ' + setScanParamsOutput,
+	# 	print 'Test cannot continue without setScanParams. Test ending'
+	# 	return 
+	result = checkInit(bSer, 'B')
+	if result == False:
+		print 'Initial requirements failed. Test ending'
+		return
+
 	passList = []
 	failList = []
 	bSer.write('1\n')
@@ -160,7 +197,10 @@ def HRMTest(aSer, bSer):
 			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			aSer.write(str(i) + '\n')
-			if testDictA[i](aSer, bSer):
+			result = testDictA[i](aSer, bSer)
+			if result is None:
+				pass
+			elif result:
 				passList = passList + [i]
 			else:
 				failList = failList + [i]
@@ -168,7 +208,10 @@ def HRMTest(aSer, bSer):
 		flushSerials(aSer, bSer)
 		print '\nRunning connect test\n'
 		bSer.write('connect\n')
-		if HRM.connectTestB(aSer, bSer):
+		result = HRM.connectTestB(aSer, bSer)
+		if result is None:
+			pass
+		elif result:
 			passList = passList + ['connect']
 		else:
 			failList = failList + ['connect']
@@ -177,7 +220,10 @@ def HRMTest(aSer, bSer):
 			print '\nRunning ' + str(i) + ' test\n'
 			flushSerials(aSer, bSer)
 			bSer.write(str(i) + '\n')
-			if testDictB[i](aSer, bSer):
+			result = testDictB[i](aSer, bSer)
+			if result is None:
+				pass
+			elif result:
 				passList = passList + [i]
 			else:
 				failList = failList + [i]
@@ -186,7 +232,10 @@ def HRMTest(aSer, bSer):
 		print '\nRunning disconnect test\n'	
 		bSer.write('disconnect\n')
 		time.sleep(2)
-		if HRM.disconnectTestB(aSer, bSer):
+		result = HRM.disconnectTestB(aSer, bSer)
+		if result is None:
+			pass
+		elif result:
 			passList = passList + ['disconnect']
 		else:
 			failList = failList + ['disconnect']
@@ -218,11 +267,13 @@ def HRMTest(aSer, bSer):
 			elif testInput in testDictB:
 				bSer.write(str(testInput) + '\n')
 			
-			if (funcTest(aSer, bSer)):
+			result = funcTest(aSer, bSer)
+			if result is None:
+				pass
+			elif result:
 				if testInput in failList:
 					failList.remove(testInput)
 				passList = (list(set(passList + [testInput])))
-
 			else:
 				if testInput not in passList:
 					failList = (list(set(failList + [testInput])))
@@ -271,14 +322,7 @@ if __name__ == "__main__":
 	bMount = getJson(1, 'mount_point')
 	aName = getJson(0, 'platform_name')
 	bName = getJson(1, 'platform_name')
-	'''
-	bPort = getJson(0, 'serial_port')
-	aPort = getJson(1, 'serial_port')
-	bMount = getJson(0, 'mount_point')
-	aMount = getJson(1, 'mount_point')
-	bName = getJson(0, 'platform_name')
-	aName = getJson(1, 'platform_name')
-	'''
+
 	if len(sys.argv) < 2:
 		print 'Give test name as argument e.g. -iBeacon'
 		sys.exit()

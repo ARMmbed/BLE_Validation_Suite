@@ -22,11 +22,20 @@
 #include "LEDService.h"
 #include "ButtonService.h"
 
-#define ASSERT_NO_FAILURE(X) (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{sucess}}\r\n")) : printf("{{failure}}\r\n");
+#define ASSERT_NO_FAILURE(CMD) do { \
+                    ble_error_t error = (CMD); \
+                    if (error == BLE_ERROR_NONE){ \
+                        printf("{{success}}\r\n"); \
+                    } else{ \
+                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+                        return; \
+                    } \
+                    }while (0)
+#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE                   ble;
 Gap::Address_t        address;
+GapAdvertisingData::Appearance appearance;
 
 const static char     DEVICE_NAME[] = "HRMTEST";
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
@@ -60,13 +69,13 @@ void testDeviceName()
     uint8_t  deviceName[MAX_DEVICE_NAME_LEN];
     unsigned length = MAX_DEVICE_NAME_LEN;
     ASSERT_NO_FAILURE(ble.gap().getDeviceName(deviceName, &length));
-    
+    printf("ASSERTIONS DONE\r\n");
     for (unsigned i = 0; i < length; i++) {
-        printf("%02x ", deviceName[i]);
+        printf("%c", deviceName[i]);
     }
     printf("\r\n");
     for (unsigned i = 0; i < strlen((char *)deviceNameIn); i++) {
-        printf("%02x ", deviceNameIn[i]);
+        printf("%c", deviceNameIn[i]);
     }
     printf("\r\n");
 }
@@ -78,11 +87,9 @@ void testAppearance()
         return;
     }
 
-    GapAdvertisingData::Appearance appearance;
     ASSERT_NO_FAILURE(ble.gap().setAppearance(GapAdvertisingData::GENERIC_PHONE));
-    wait(0.5);
-
     ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
+    printf("ASSERTIONS DONE\r\n");
     printf("%d\r\n", appearance);
 }
 
@@ -99,6 +106,9 @@ void connParams()
 
     ASSERT_NO_FAILURE(ble.gap().getPreferredConnectionParams(&temp));
     ASSERT_NO_FAILURE(ble.gap().setPreferredConnectionParams(&paramsOut));
+    
+    printf("ASSERTIONS DONE\r\n");
+    
     ble.gap().getPreferredConnectionParams(&params);
 
     printf("%d\n", params.minConnectionInterval);

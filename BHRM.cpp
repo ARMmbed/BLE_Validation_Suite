@@ -20,8 +20,16 @@
 #include "ble/DiscoveredService.h"
 #define DUMP_ADV_DATA 0
 
-#define ASSERT_NO_FAILURE(X)  (X == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X, Y)     ((X)==(Y)) ?            (printf("{{sucess}}\n"))    : printf("{{failure}}\n");
+#define ASSERT_NO_FAILURE(CMD) do { \
+                    ble_error_t error = (CMD); \
+                    if (error == BLE_ERROR_NONE){ \
+                        printf("{{success}}\r\n"); \
+                    } else{ \
+                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+                        return; \
+                    } \
+                    }while (0)
+#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE                      ble;
 Gap::Address_t           address;
@@ -229,7 +237,7 @@ int main(void)
 
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
-
+    printf("ASSERTIONS DONE\r\n");
     ble.gap().onConnection(connectionCallback);
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);

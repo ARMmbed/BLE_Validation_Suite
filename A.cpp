@@ -17,10 +17,16 @@
 #include "mbed.h"
 #include "ble/services/iBeacon.h"
 
-#define ASSERT_NO_FAILURE(X) ((X) == BLE_ERROR_NONE) ? (printf("{{success}}\r\n")) : \
-                                                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #X, __LINE__, (X));
-#define CHECK_EQUALS(X,Y)    ((X) == (Y)) ? (printf("{{sucess}}\n")) : \
-                                            (printf("{{failure}} %s != %s at line %u\r\n", #X, #Y, __LINE__));
+#define ASSERT_NO_FAILURE(CMD) do { \
+                    ble_error_t error = (CMD); \
+                    if (error == BLE_ERROR_NONE){ \
+                        printf("{{success}}\r\n"); \
+                    } else{ \
+                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+                        return; \
+                    } \
+                    }while (0)
+#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE ble;
 DigitalOut myled(LED1);
@@ -30,7 +36,6 @@ DigitalOut myled(LED1);
 */
 void setupIBeaconTest(void)
 {
-    ble.gap().stopAdvertising();
     /* setup the ibeacon */
     const static uint8_t uuid[] = {0xE2, 0x0A, 0x39, 0xF4, 0x73, 0xF5, 0x4B, 0xC4,
                                    0xA1, 0x2F, 0x17, 0xD1, 0xAD, 0x07, 0xA9, 0x61};
@@ -38,14 +43,16 @@ void setupIBeaconTest(void)
     uint16_t minorNumber = 3344;
     uint16_t txPower     = 0xC8;
     iBeacon ibeacon(ble, uuid, majorNumber, minorNumber, txPower);
-
-    ble.gap().setAdvertisingInterval(1000); /* 1000ms. */
-    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), (uint16_t)1000); /* TODO: what does this return?? */
+    
+    uint16_t interval_value = 1000;
+    ble.gap().setAdvertisingInterval(interval_value); /* 1000ms. */
+    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), interval_value); 
 
     ble.gap().setAdvertisingTimeout(0);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
 
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
 }
 /**
 * Test for setting and getting MAC address
@@ -60,6 +67,7 @@ void setAddrTest(void)
     ASSERT_NO_FAILURE(ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, newAddress));
     Gap::Address_t fetchedAddress;
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, fetchedAddress));
+    printf("ASSERTIONS DONE\r\n");
     printf("%d:%d:%d:%d:%d:%d\n", newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5]);
     printf("%d:%d:%d:%d:%d:%d\n", fetchedAddress[0], fetchedAddress[1], fetchedAddress[2], fetchedAddress[3], fetchedAddress[4], fetchedAddress[5]);
 
@@ -70,11 +78,10 @@ void setAddrTest(void)
 */
 void changeAdvertisingInterval(void)
 {
-    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
-
     ble.gap().setAdvertisingTimeout(0);
     ble.gap().setAdvertisingInterval(500); /* in milliseconds. */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
 }
 
 /**
@@ -82,7 +89,6 @@ void changeAdvertisingInterval(void)
 */
 void changeAdvPay(void)
 {
-    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
 
     ble.gap().clearAdvertisingPayload();
     ble.gap().setAdvertisingTimeout(0);
@@ -96,6 +102,7 @@ void changeAdvPay(void)
 
     ble.gap().setAdvertisingInterval(500); /* in milliseconds. */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
 }
 
 /**
@@ -103,7 +110,6 @@ void changeAdvPay(void)
 */
 void changeScanRes(void)
 {
-    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
 
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
@@ -118,6 +124,7 @@ void changeScanRes(void)
 
     ble.gap().setAdvertisingInterval(500); /* in  units of milliseconds. */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
 }
 
 /**
@@ -125,13 +132,13 @@ void changeScanRes(void)
 */
 void timeoutTest(void)
 {
-    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
 
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
     ble.gap().setAdvertisingTimeout(5); /* 5 seconds */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
 }
 
 /**
@@ -148,15 +155,14 @@ void resetStateForNextTest(void)
     const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
 
-    ASSERT_NO_FAILURE(ble.gap().startAdvertising());
 }
 
 void shutdownTest(void)
 {
-    ASSERT_NO_FAILURE(ble.gap().stopAdvertising());
     ASSERT_NO_FAILURE(ble.shutdown());
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("ASSERTIONS DONE\r\n");
         
 }
 
@@ -166,6 +172,7 @@ void shutdownTest(void)
 void commandInterpreter(void)
 {
     const size_t MAX_SIZEOF_TESTNAME = 50;
+    
     while (true) {
         char command[MAX_SIZEOF_TESTNAME];
         scanf("%s", command); /* fetch the testname from the host python script. */

@@ -48,90 +48,85 @@ def connectTestB(aSer,bSer):
 '''
 def setDeviceNameTestA(aSer,bSer):
 	print '\tSetting Device name to Josh-test\n'
-	outputB = aSer.readline()
-	if 'Device must be disconnected' in outputB:
-		print '\tDevice must be disconnected'
-		return False
-	if '{{success}}' not in outputB:
-		print '\tMBED[B]: ' + outputB,
-	if '{{failure}}' in outputB:
-		return False
-	outputB = aSer.readline()
-	if '{{success}}' not in outputB:
-		print '\tMBED[B]: ' + outputB,
-	if '{{failure}}' in outputB:
-		return False
-	deviceName = aSer.readline()
-	deviceNameIn = aSer.readline()
-	print '\tMBED[B]: Device name: ' + deviceName,
-	return deviceName == deviceNameIn
+	# outputB = aSer.readline()
+	# if 'Device must be disconnected' in outputB:
+	# 	print '\tDevice must be disconnected'
+	# 	return False
+	# if '{{success}}' not in outputB:
+	# 	print '\tMBED[B]: ' + outputB,
+	# if '{{failure}}' in outputB:
+	# 	return False
+	# outputB = aSer.readline()
+	# if '{{success}}' not in outputB:
+	# 	print '\tMBED[B]: ' + outputB,
+	# if '{{failure}}' in outputB:
+	# 	return False
+	result = checkInit(aSer, 'A')
+	if result:
+		deviceName = aSer.readline()
+		deviceNameIn = aSer.readline()
+		print '\tMBED[B]: Device name: ' + deviceName,
+		result = deviceName == deviceNameIn
+	return result
 		
 '''! tests setAppearance and getAppearance functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 '''
 def appearanceTestA(aSer,bSer):
 	print '\tSetting appearance to GENERIC_PHONE (64)\n'
-	
-	outputB = aSer.readline()
-	if 'Device must be disconnected' in outputB:
-		print '\tDevice must be disconnected'
-		return False
-	if '{{success}}' not in outputB:
-		print '\tMBED[B]: ' + outputB,
-	if '{{failure}}' in outputB:
-		return False
-	outputB = aSer.readline()
-	if '{{success}}' not in outputB:
-		print outputB,
-	if '{{failure}}' in outputB:
-		return False
-	appearance = aSer.readline()
-	print '\tMBED[B]: Appearance = ' + appearance,
-	return '64' in appearance
+	result = checkInit(aSer, 'A')
+	if result:
+		appearance = aSer.readline()
+		print '\tMBED[B]: Appearance = ' + appearance,
+		result = '64' in appearance
+	return result
 
 '''! tests the get/setPreferredConnectionParams functions, only runnable when devices are disconnected
 @param aSer the serial port for device A
 @param bSer teh serial port for device B
 '''
 def connParamTestA(aSer,bSer):
-	getConn = aSer.readline()
-	if '{{failure}}' in getConn:
-		return False
-	if 'Device must be disconnected' in getConn:
-		print '\tDevice must be disconnected'
-		return False
 	print '\tSetting minConnectionInterval to 50'
 	print '\tSetting maxConnectionInterval to 500'
 	print '\tSetting slave to 0'
 	print '\tSetting connectionSupervisionTimeout to 500\n'
-	setConn = aSer.readline()
-	if '{{success}}' not in getConn:
-		print getConn,
-	if '{{success}}' not in setConn:
-		print setConn,
-	if '{{failure}}' in setConn:
-		return False
-	minConn = aSer.readline()
-	if '{{failure}}' in minConn:
-		print '\tMBED[A]: ' + minConn,
-		return False
-	maxConn = aSer.readline()
-	if '{{failure}}' in maxConn:
-		print '\tMBED[A]: ' + maxConn,
-		return False
-	slave = aSer.readline()
-	if '{{failure}}' in slave:
-		print '\tMBED[A]: ' + slave,
-		return False
-	connSup = aSer.readline()
-	if '{{failure}}' in connSup:
-		print '\tMBED[A]: ' + connSup,
-		return False
-	print '\tminConnectionInterval: ' + minConn,
-	print '\tmaxConnectionInterval: ' + maxConn,
-	print '\tslave: ' + slave,
-	print '\tconnectionSupervisionTimeout: ' + connSup,
-	return '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup
+	# getConn = aSer.readline()
+	# if '{{failure}}' in getConn:
+	# 	return False
+	# if 'Device must be disconnected' in getConn:
+	# 	print '\tDevice must be disconnected'
+	# 	return False
+	# setConn = aSer.readline()
+	# if '{{success}}' not in getConn:
+	# 	print getConn,
+	# if '{{success}}' not in setConn:
+	# 	print setConn,
+	# if '{{failure}}' in setConn:
+	# 	return False
+	result = checkInit(aSer, 'A')
+	if result:
+		minConn = aSer.readline()
+		if '{{failure}}' in minConn:
+			print '\tMBED[A]: ' + minConn,
+			return False
+		maxConn = aSer.readline()
+		if '{{failure}}' in maxConn:
+			print '\tMBED[A]: ' + maxConn,
+			return False
+		slave = aSer.readline()
+		if '{{failure}}' in slave:
+			print '\tMBED[A]: ' + slave,
+			return False
+		connSup = aSer.readline()
+		if '{{failure}}' in connSup:
+			print '\tMBED[A]: ' + connSup,
+			return False
+		print '\tminConnectionInterval: ' + minConn,
+		print '\tmaxConnectionInterval: ' + maxConn,
+		print '\tslave: ' + slave,
+		print '\tconnectionSupervisionTimeout: ' + connSup,
+		result = '50' in minConn and '500' in maxConn and '0' in slave and '500' in connSup
+	return result
 	
 '''! test to read device A's HRM characteristic from device B, only runnable when devices are connected
 @param aSer the serial object for device A
