@@ -1,0 +1,5 @@
+C:/Users/jossla01/Documents/GitHub/BLE_iBeacon/B/build/mkit-classic-gcc/ym/ble/source/CMakeFiles/ble.dir
+C:/Users/jossla01/Documents/GitHub/BLE_iBeacon/B/build/mkit-classic-gcc/CMakeFiles/all_tests.dir
+C:/Users/jossla01/Documents/GitHub/BLE_iBeacon/B/build/mkit-classic-gcc/ym/ble-nrf51822/source/CMakeFiles/ble-nrf51822.dir
+C:/Users/jossla01/Documents/GitHub/BLE_iBeacon/B/build/mkit-classic-gcc/ym/mbed-classic/existing/CMakeFiles/mbed-classic.dir
+C:/Users/jossla01/Documents/GitHub/BLE_iBeacon/B/build/mkit-classic-gcc/source/CMakeFiles/ble-ibeacon-b.dir

@@ -14,15 +14,18 @@ from pprint import pprint
 import HRM_tests as HRM
 import iBeacon_tests as iBeacon
 
-
 '''! uses mbedls, parses json output and returns object which is specified
 @param devNo the device number 0,1,2... up to number of devices plugged in and detected with mbedls
 @param var the object name which data is required
 '''
 def getJson(devNo, var):
-	A = subprocess.check_output(['mbedls','--json'])
-	d = json.loads(A)
-	return d[devNo][var]
+	try:
+		A = subprocess.check_output(['mbedls','--json'])
+		d = json.loads(A)
+		return d[devNo][var]
+	except IndexError:
+		print 'Cannot find device mounted'
+		sys.exit()
 	
 '''! calls shell mbedhtrun which flashes devices specified
 @param mount the mount point of device e.g. E:/
@@ -35,13 +38,16 @@ def flashDevice(mount,serial,file,device):
 	return 
 
 def checkInit(ser, str):
-	result = True
-	while True:
+	result = False
+	time1 = time.time()
+	while time.time() - time1 < 30:
 		output = ser.readline()
 		if 'ASSERTIONS DONE' in output:
+			result = True
 			break
 		if '{{success}}' not in output:
 			print '\tMBED[{0}]: '.format(str) + output,
+			result = True
 		if 'Device must be' in output:
 			result = None
 			break
@@ -308,14 +314,38 @@ def transferAddr(aSer, bSer):
 	print 'BLE Address of A: ',
 	print MAC
 	print 'Writing BLE MAC to device B'
+	print bSer.readline()
 	for i in MAC:
 		bSer.write(i + '\n')
-		
 	print 'BLE MAC written'
+
+def yottaBuild():
+	try:
+		if '-iBeacon' in sys.argv:
+			os.chdir('A')
+			subprocess.check_call(['yt', 'build'])
+			os.chdir('..')
+			os.chdir('B')
+			subprocess.call(['yt', 'build'])
+			os.chdir('..')
+		elif '-HRM' in sys.argv:
+			os.chdir('AHRM')
+			subprocess.check_call(['yt', 'build'])
+			os.chdir('..')
+			os.chdir('BHRM')
+			subprocess.call(['yt', 'build'])
+			os.chdir('..')
+	except CalledProcessError:
+		print 'Yotta build failed'
+		sys.exit()
+	if '-iBeacon' in sys.argv:
+   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ibeacon' in name if name.endswith("combined.hex")]
+   	elif '-HRM' in sys.argv:
+   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'hrm' in name if name.endswith("combined.hex")]
+   	return path
 
 if __name__ == "__main__":
 	# DETECTION
-	
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
 	aMount = getJson(0, 'mount_point')
@@ -327,7 +357,11 @@ if __name__ == "__main__":
 		print 'Give test name as argument e.g. -iBeacon'
 		sys.exit()
 	#flashing
-	if '-f' in sys.argv:
+	if '-y' in sys.argv:
+		path = yottaBuild()
+		flashDevice(aMount, aPort, path[0], aName)
+		flashDevice(bMount, bPort, path[1], bName)
+	elif '-f' in sys.argv:
 		index = sys.argv.index('-f')
 		try:
 			aFile = sys.argv[index + 1]
@@ -346,10 +380,10 @@ if __name__ == "__main__":
 			flashDevice(aMount, aPort, 'A_NRF51822.hex', aName)
 			print ''
 			flashDevice(bMount, bPort, 'B_NRF51822.hex', aName)
-		elif '-iBeaconNUC' in sys.argv:
-			flashDevice(aMount, aPort, 'A_NUC_NUCLEO_F411RE.bin', aName)#'NUCLEO_F401RE')
+		elif '-test' in sys.argv:
+			flashDevice(aMount, aPort, 'A\\build\\mkit-classic-gcc\\source\\ble-device-a-combined.hex', aName)
 			print ''
-			flashDevice(bMount, bPort, 'B_NRF51822.hex', bName)
+			flashDevice(bMount, bPort, 'B\\build\\mkit-classic-gcc\\source\\ble-device-b-combined.hex', aName)
 		elif '-HRM' in sys.argv:
 			flashDevice(aMount, aPort, 'AHRM_NRF51822.hex', aName)
 			print ''
@@ -371,5 +405,7 @@ if __name__ == "__main__":
 		iBeaconTest(aSer, bSer)
 	elif '-HRM' in sys.argv:
 		HRMTest(aSer, bSer)
+	elif '-test' in sys.argv:
+		iBeaconTest(aSer, bSer)
 	else:
 		sys.exit()
