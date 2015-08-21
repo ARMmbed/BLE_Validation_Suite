@@ -182,6 +182,7 @@ def setTimeoutTest(aSer,bSer):
 				counter = counter + 1
 			if counter > 5:
 				result = True
+				break
 	return result
 
 

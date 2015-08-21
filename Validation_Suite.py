@@ -322,26 +322,52 @@ def transferAddr(aSer, bSer):
 def yottaBuild():
 	try:
 		if '-iBeacon' in sys.argv:
-			os.chdir('A')
-			subprocess.check_call(['yt', 'build'])
-			os.chdir('..')
-			os.chdir('B')
-			subprocess.call(['yt', 'build'])
-			os.chdir('..')
+			if '-mbedos' in sys.argv:
+				os.chdir('Aos')
+				subprocess.check_call(['yt', 'build'])
+				os.chdir('..')
+				os.chdir('Bos')
+				subprocess.call(['yt', 'build'])
+				os.chdir('..')
+			else:
+				os.chdir('A')
+				subprocess.check_call(['yt', 'build'])
+				os.chdir('..')
+				os.chdir('B')
+				subprocess.call(['yt', 'build'])
+				os.chdir('..')
 		elif '-HRM' in sys.argv:
-			os.chdir('AHRM')
-			subprocess.check_call(['yt', 'build'])
-			os.chdir('..')
-			os.chdir('BHRM')
-			subprocess.call(['yt', 'build'])
-			os.chdir('..')
-	except CalledProcessError:
+			if '-mbedos' in sys.argv:
+				os.chdir('AHRMOS')
+				subprocess.check_call(['yt', 'build'])
+				os.chdir('..')
+				os.chdir('BHRMOS')
+				subprocess.call(['yt', 'build'])
+				os.chdir('..')
+			else:
+				os.chdir('AHRM')
+				subprocess.check_call(['yt', 'build'])
+				os.chdir('..')
+				os.chdir('BHRM')
+				subprocess.call(['yt', 'build'])
+				os.chdir('..')
+		else:
+			print 'Invalid test name'
+			sys.exit()
+	except:
+		print sys.exc_info()[0]
 		print 'Yotta build failed'
 		sys.exit()
 	if '-iBeacon' in sys.argv:
-   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ibeacon' in name if name.endswith("combined.hex")]
+		if '-mbedos' in sys.argv:
+   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")]
+   		else:
+   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
    	elif '-HRM' in sys.argv:
-   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'hrm' in name if name.endswith("combined.hex")]
+   		if '-mbedos' in sys.argv:
+   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
+   		else:
+   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
    	return path
 
 if __name__ == "__main__":

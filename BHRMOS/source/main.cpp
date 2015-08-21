@@ -232,7 +232,7 @@ void hvxCallback(const GattHVXCallbackParams *params) {
     printf("\r\n");
 }
 
-void app_start(int, char*[])
+void app_start(int, char* [])
 {
     printf("{{end}}\n"); /* Hands control over to Python script */
 
@@ -251,13 +251,3 @@ void app_start(int, char*[])
     ble.gattClient().onHVX(hvxCallback);
     commandInterpreter();
 }
-
-#if !defined(YOTTA_MINAR_VERSION_STRING)
-
-int main(void)
-{
-    app_start(0, NULL);
-    return 0;
-}
-
-#endif

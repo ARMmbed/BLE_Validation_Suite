@@ -1,5 +1,0 @@
-{
-  "build": {
-    "target": "mkit-classic-gcc,*"
-  }
-}

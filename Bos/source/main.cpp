@@ -53,7 +53,7 @@ void advertisementCallback(const Gap::AdvertisementCallbackParams_t *params)
     printf("ScanResp: %u, Data: %u\r\n", params->isScanResponse, *(params->advertisingData + params->advertisingDataLen - 1));
 }
 
-void app_start(int, char*[])
+void app_start(int argc, char *argv[])
 {
     printf("{{success}}\r\n{{end}}\r\n"); /* to handover control from the hosttest to the python script. */
     /* Read in the peer address. */

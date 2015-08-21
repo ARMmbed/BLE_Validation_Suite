@@ -1,0 +1,17 @@
+{
+  "name": "ble-mbedos-ibeacon-b",
+  "version": "0.0.0",
+  "description": "program for device b, part of BLE validation suite",
+  "licenses": [
+    {
+      "url": "https://spdx.org/licenses/Apache-2.0",
+      "type": "Apache-2.0"
+    }
+  ],
+  "dependencies": {
+      "ble": "ARMmbed/ble"
+  },
+  "targetDependencies": {},
+  "bin": "./source"
+}
+

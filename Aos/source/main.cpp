@@ -119,7 +119,6 @@ void changeAdvPay(void)
 */
 void changeScanRes(void)
 {
-
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
     ble.gap().setAdvertisingTimeout(0);
@@ -141,6 +140,7 @@ void changeScanRes(void)
 */
 void timeoutTest(void)
 {
+
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
@@ -162,7 +162,6 @@ void resetStateForNextTest(void)
 
     const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
-
 }
 
 void shutdownTest(void)
@@ -234,7 +233,7 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
-void app_start(int, char*[])
+void app_start(int argc, char *argv[])
 {
     unsigned errorCode = verifyBasicAssumptions();
 
