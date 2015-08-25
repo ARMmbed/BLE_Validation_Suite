@@ -128,9 +128,9 @@ void connParams()
     ble.gap().setPreferredConnectionParams(&temp);
 }
 
-void notificationTest(void) {
-    btnServicePtr->updateButtonState(true);
-}
+// void notificationTest(void) {
+//     btnServicePtr->updateButtonState(true);
+// }
 
 void commandInterpreter(void)
 {
@@ -145,8 +145,8 @@ void commandInterpreter(void)
             testAppearance();
         } else if (!strcmp(command, "connParam")) {
             connParams();
-        } else if (!strcmp(command, "notification")) {
-            notificationTest();
+        // } else if (!strcmp(command, "notification")) {
+        //     notificationTest();
         }
     }
 }
@@ -186,7 +186,7 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
-void app_start(int, char* [])
+void app_start(int, char*[])
 {
     unsigned errorCode = ble.init();
     if (errorCode == 0) {
@@ -223,3 +223,13 @@ void app_start(int, char* [])
 
     commandInterpreter();
 }
+
+#if !defined(YOTTA_MINAR_VERSION_STRING)
+
+int main(void)
+{
+    app_start(0, NULL);
+    return 0;
+}
+
+#endif

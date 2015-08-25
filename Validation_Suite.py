@@ -76,21 +76,6 @@ def flushSerials(aSer, bSer):
 @param bSer the serial object for device B 
 '''
 def iBeaconTest(aSer, bSer):
-	# bleInitCheck = bSer.readline()
-	# if '{{failure}}' in bleInitCheck:
-	# 	print 'MBED[B]: ' + bleInitCheck,
-	# 	print 'Test cannot continue without ble.init(). Test ending'
-	# 	return
-	# setScanParamsCheck = bSer.readline()
-	# if '{{failure}}' in setScanParamsCheck:
-	# 	print 'MBED[B]: ' + setScanParamsCheck,
-	# 	print 'Test cannot continue without setScanParams. Test ending'
-	# 	return
-	# startScanCheck = bSer.readline()
-	# if '{{failure}}' in startScanCheck:
-	# 	print 'MBED[B]: ' + startScanCheck,
-	# 	print 'Test cannot continue without startScan. Test ending'		
-	# 	return
 	result = checkInit(bSer, 'B')
 	if result == False:
 		print 'Initial requirements failed. Test ending'
@@ -165,16 +150,6 @@ def iBeaconTest(aSer, bSer):
 @param bSer the serial object for device B
 '''
 def HRMTest(aSer, bSer):
-	# bleInitCheck = bSer.readline()
-	# if '{{failure}}' in bleInitCheck:
-	# 	print 'MBED[B]: ' + bleInitCheck,
-	# 	print 'Test cannot continue with ble.init. Test ending'
-	# 	return 
-	# setScanParamsOutput = bSer.readline()
-	# if '{{failure}}' in setScanParamsOutput:
-	# 	print 'MBED[B]: ' + setScanParamsOutput,
-	# 	print 'Test cannot continue without setScanParams. Test ending'
-	# 	return 
 	result = checkInit(bSer, 'B')
 	if result == False:
 		print 'Initial requirements failed. Test ending'
@@ -319,6 +294,9 @@ def transferAddr(aSer, bSer):
 		bSer.write(i + '\n')
 	print 'BLE MAC written'
 
+
+'''! builds the files to be flashed using yotta
+'''
 def yottaBuild():
 	try:
 		if '-iBeacon' in sys.argv:
@@ -327,14 +305,14 @@ def yottaBuild():
 				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 				os.chdir('Bos')
-				subprocess.call(['yt', 'build'])
+				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 			else:
 				os.chdir('A')
 				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 				os.chdir('B')
-				subprocess.call(['yt', 'build'])
+				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 		elif '-HRM' in sys.argv:
 			if '-mbedos' in sys.argv:
@@ -342,14 +320,14 @@ def yottaBuild():
 				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 				os.chdir('BHRMOS')
-				subprocess.call(['yt', 'build'])
+				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 			else:
 				os.chdir('AHRM')
 				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 				os.chdir('BHRM')
-				subprocess.call(['yt', 'build'])
+				subprocess.check_call(['yt', 'build'])
 				os.chdir('..')
 		else:
 			print 'Invalid test name'
@@ -358,9 +336,16 @@ def yottaBuild():
 		print sys.exc_info()[0]
 		print 'Yotta build failed'
 		sys.exit()
+
+
+'''! gets the file path from the yotta build system
+'''
+def yottaGetFiles():
+	yottaBuild()
+	#get the path of the hex file to be copied
 	if '-iBeacon' in sys.argv:
 		if '-mbedos' in sys.argv:
-   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")]
+   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")] 
    		else:
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
    	elif '-HRM' in sys.argv:
@@ -370,8 +355,28 @@ def yottaBuild():
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
    	return path
 
+
+'''! gets the file name from the user input
+'''
+def getFiles():
+	index = sys.argv.index('-f')
+	path = []
+	try:
+		path.append(sys.argv[index + 1])
+		path.append(sys.argv[index + 2])
+		if not os.path.exists(path[0]):
+			print path[0] + ' does not exist in current directory'
+			sys.exit()
+		elif not os.path.exists(path[1]):
+			print path[1] + ' does not exist in current directory'
+			sys.exit()
+	except IndexError:
+		print 'Two files required'
+		sys.exit()
+	return path
+
 if __name__ == "__main__":
-	# DETECTION
+	# detect the mbed devices connected to the system
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
 	aMount = getJson(0, 'mount_point')
@@ -379,45 +384,25 @@ if __name__ == "__main__":
 	aName = getJson(0, 'platform_name')
 	bName = getJson(1, 'platform_name')
 
-	if len(sys.argv) < 2:
-		print 'Give test name as argument e.g. -iBeacon'
+
+	if len(sys.argv) == 1 or '--help' in sys.argv or '-h' in sys.argv:
+		string = ('\nUse (-y) [-mbedos] to specific to build with yotta and if it should be bult for mbedos or mbed classic (mbed classic by default) |\n'
+			'Use (-f) (file1) (file2) to specify flashing with your own built binaries \n'
+			'(-HRM|-iBeacon) depending on what test you want to build'
+			'[i] for interactive mode where you can choose the test')
+		print string
 		sys.exit()
-	#flashing
-	if '-y' in sys.argv:
-		path = yottaBuild()
-		flashDevice(aMount, aPort, path[0], aName)
-		flashDevice(bMount, bPort, path[1], bName)
+	elif '-y' in sys.argv:
+		path = yottaGetFiles()
 	elif '-f' in sys.argv:
-		index = sys.argv.index('-f')
-		try:
-			aFile = sys.argv[index + 1]
-			bFile = sys.argv[index + 2]
-			if not os.path.exists(aFile) or not os.path.exists(bFile):
-				print 'File does not exist in current directory'
-				sys.exit()
-		except IndexError:
-			print 'Two arguments required'
-			sys.exit()
-		flashDevice(aMount, aPort, aFile, aName)
-		print ''
-		flashDevice(bMount, bPort, bFile, bName)
+		path = getFiles()
 	else:
-		if '-iBeacon' in sys.argv:
-			flashDevice(aMount, aPort, 'A_NRF51822.hex', aName)
-			print ''
-			flashDevice(bMount, bPort, 'B_NRF51822.hex', aName)
-		elif '-test' in sys.argv:
-			flashDevice(aMount, aPort, 'A\\build\\mkit-classic-gcc\\source\\ble-device-a-combined.hex', aName)
-			print ''
-			flashDevice(bMount, bPort, 'B\\build\\mkit-classic-gcc\\source\\ble-device-b-combined.hex', aName)
-		elif '-HRM' in sys.argv:
-			flashDevice(aMount, aPort, 'AHRM_NRF51822.hex', aName)
-			print ''
-			flashDevice(bMount, bPort, 'BHRM_NRF51822.hex', bName)
-		else:
-			print 'Invalid test name'
-			sys.exit()
-		
+		print 'Error: not enough arguments'
+		sys.exit()
+	flashDevice(aMount, aPort, path[0], aName)
+	flashDevice(bMount, bPort, path[1], bName)
+	
+
 	#Opens ports for logging 
 	print 'Opening serial ports from devices to PC\n'
 	port = int(aPort[3:])-1

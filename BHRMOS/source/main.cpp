@@ -49,6 +49,7 @@ bool                     LEDFound =          false;
 // DiscoveredCharacteristic BTNCharacteristic;
 // bool                     BTNFound =          false;
 Gap::Handle_t            deviceAHandle;
+DigitalOut myled(LED1);
 
 /*
  * Call back when a service is discovered
@@ -91,6 +92,7 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
  */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
 {
+    myled = 1;
     printf("Connected to: %d:%d:%d:%d:%d:%d\n",
            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
     if (params->role == Gap::CENTRAL) {
@@ -122,6 +124,7 @@ void connectTest()
 {
     if (!(ble.gap().getState().connected)) {
         ASSERT_NO_FAILURE(ble.gap().connect(address, Gap::ADDR_TYPE_RANDOM_STATIC, NULL, NULL));
+        myled = 0;
     } else {
         printf("Devices already connected\n");
     }
@@ -232,8 +235,9 @@ void hvxCallback(const GattHVXCallbackParams *params) {
     printf("\r\n");
 }
 
-void app_start(int, char* [])
+void app_start(int, char*[])
 {
+    myled = 1;
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;
@@ -251,3 +255,13 @@ void app_start(int, char* [])
     ble.gattClient().onHVX(hvxCallback);
     commandInterpreter();
 }
+
+#if !defined(YOTTA_MINAR_VERSION_STRING)
+
+int main(void)
+{
+    app_start(0, NULL);
+    return 0;
+}
+
+#endif

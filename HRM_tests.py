@@ -48,19 +48,6 @@ def connectTestB(aSer,bSer):
 '''
 def setDeviceNameTestA(aSer,bSer):
 	print '\tSetting Device name to Josh-test\n'
-	# outputB = aSer.readline()
-	# if 'Device must be disconnected' in outputB:
-	# 	print '\tDevice must be disconnected'
-	# 	return False
-	# if '{{success}}' not in outputB:
-	# 	print '\tMBED[B]: ' + outputB,
-	# if '{{failure}}' in outputB:
-	# 	return False
-	# outputB = aSer.readline()
-	# if '{{success}}' not in outputB:
-	# 	print '\tMBED[B]: ' + outputB,
-	# if '{{failure}}' in outputB:
-	# 	return False
 	result = checkInit(aSer, 'A')
 	if result:
 		deviceName = aSer.readline()
@@ -90,19 +77,6 @@ def connParamTestA(aSer,bSer):
 	print '\tSetting maxConnectionInterval to 500'
 	print '\tSetting slave to 0'
 	print '\tSetting connectionSupervisionTimeout to 500\n'
-	# getConn = aSer.readline()
-	# if '{{failure}}' in getConn:
-	# 	return False
-	# if 'Device must be disconnected' in getConn:
-	# 	print '\tDevice must be disconnected'
-	# 	return False
-	# setConn = aSer.readline()
-	# if '{{success}}' not in getConn:
-	# 	print getConn,
-	# if '{{success}}' not in setConn:
-	# 	print setConn,
-	# if '{{failure}}' in setConn:
-	# 	return False
 	result = checkInit(aSer, 'A')
 	if result:
 		minConn = aSer.readline()

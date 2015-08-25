@@ -21,18 +21,6 @@ def approxEqual(x, y, range):
 @param bSer the serial object for device B 
 '''
 def detectTest(aSer,bSer):
-	# interval = aSer.readline()
-	# if '{{failure}}' in interval:
-	# 	print '\tMBED[A]: ' + interval,
-	# 	return False
-	# timeout = aSer.readline()
-	# if '{{failure}}' in timeout:
-	# 	print '\tMBED[A]: ' + timeout,
-	# 	return False
-	# startAdvertisingErrorCode = aSer.readline()
-	# if '{{failure}}' in startAdvertisingErrorCode:
-	# 	print '\tMBED[A]: ' + startAdvertisingErrorCode,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		counter = 0
@@ -54,14 +42,6 @@ def detectTest(aSer,bSer):
 '''
 def setAddrTest(aSer,bSer):
 	print '\tSetting BLE MAC Address to 110:100:100:100:100:100'
-	# setAddrError = aSer.readline()
-	# if '{{failure}}' in setAddrError:
-	# 	print '\tMBED[A]: ' + setAddrError,
-	# 	return False
-	# getAddrError = aSer.readline()
-	# if '{{failure}}' in getAddrError:
-	# 	print '\tMBED[A]: ' + getAddrError,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	addr1 = aSer.readline()
 	addr2 = aSer.readline()
@@ -73,19 +53,15 @@ def setAddrTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''	
 def changeIntervalTest(aSer,bSer):
-	# startError = aSer.readline()
-	# if '{{failure}}' in startError:
-	# 	print 'MBED[A]: ' + startError,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
+		PASS_COUNTER = 5
 		counter = 0
 		avg = 0
 		time2 = time.time()
-
 		startTime= time.time()
 		result = False
-		while time.time() - startTime < TIMEOUT*1.5:
+		while time.time() - startTime < TIMEOUT:
 			outputB = bSer.readline()
 			if outputB != '':
 				print '\tMBED[B]: ' + outputB,
@@ -97,7 +73,7 @@ def changeIntervalTest(aSer,bSer):
 					avg = avg + uptime
 				print '\tPC: Time interval: ' + str(uptime)
 				time2 = time.time()
-				if counter == 5:
+				if counter == PASS_COUNTER:
 					avg = avg/counter
 					result = approxEqual(avg,0.5,0.05)
 					break
@@ -109,13 +85,9 @@ def changeIntervalTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''		
 def changePayloadTest(aSer,bSer):
-	# for i in xrange(5):
-	# 	payloadError = aSer.readline()
-	# 	if '{{failure}}' in payloadError:
-	# 		print 'MBED[A]: ' + payloadError,
-	# 		return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
+		result = False
 		startTime = time.time()
 		while time.time() - startTime < TIMEOUT:
 			outputB = bSer.readline()
@@ -132,18 +104,6 @@ def changePayloadTest(aSer,bSer):
 '''					
 def responseTest(aSer,bSer):
 	print '\tSetting scan response'
-	# payloadError = aSer.readline()
-	# if '{{failure}}' in payloadError:
-	# 	print 'MBED[A]: ' + payloadError,
-	# 	return False
-	# scanError = aSer.readline()
-	# if '{{failure}}' in scanError:
-	# 	print 'MBED[A]: ' + scanError,
-	# 	return False
-	# startAd = aSer.readline()
-	# if '{{failure}}' in startAd:
-	# 	print 'MBED[A]: ' + startAd,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		startTime = time.time()
@@ -163,12 +123,9 @@ def responseTest(aSer,bSer):
 '''					
 def setTimeoutTest(aSer,bSer):
 	print '\tSetting timeout to 5 seconds'
-	# startAd = aSer.readline()
-	# if '{{failure}}' in startAd:
-	# 	print 'MBED[A]: ' + startAd,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
+		PASS_COUNTER = 3
 		counter = 0
 		startTime = time.time()
 		result = False
@@ -180,25 +137,13 @@ def setTimeoutTest(aSer,bSer):
 				counter = 0
 			if outputB == '':
 				counter = counter + 1
-			if counter > 5:
+			if counter > PASS_COUNTER:
 				result = True
 				break
 	return result
 
 
 def shutdownTest(aSer, bSer):
-	# shutdown = aSer.readline()
-	# if '{{failure}}' in shutdown:
-	# 	print '\tMBED[A]: ' + shutdown,
-	# 	return False
-	# bleinit = aSer.readline()
-	# if '{{failure}}' in bleinit:
-	# 	print '\tMBED[A]: ' + bleinit,
-	# 	return False
-	# startAd = aSer.readline()
-	# if '{{failure}}' in startAd:
-	# 	print '\tMBED[A]: ' + startAd,
-	# 	return False
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		startTime = time.time()

@@ -140,7 +140,7 @@ void changeScanRes(void)
 */
 void timeoutTest(void)
 {
-
+    ble.gap().setAdvertisingInterval(1000);
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
@@ -233,7 +233,7 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
-void app_start(int argc, char *argv[])
+void app_start(int, char*[])
 {
     unsigned errorCode = verifyBasicAssumptions();
 

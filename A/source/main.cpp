@@ -141,6 +141,7 @@ void changeScanRes(void)
 */
 void timeoutTest(void)
 {
+    ble.gap().setAdvertisingInterval(1000);
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
