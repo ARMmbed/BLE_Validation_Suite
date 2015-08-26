@@ -3,10 +3,14 @@ import datetime
 import time
 import sys
 import threading
+import json
 from types import *
 import Validation_Suite as suite
 
-TIMEOUT = 30
+with open('config.json') as json_file:
+	config = json.load(json_file)
+
+TIMEOUT = config['timeout']
 
 '''! Calculates if inputs are with approximately equal to each other within a range reutrn Boolean
 @param x first input

@@ -1,0 +1,6 @@
+{
+	"platforms":[
+		"NRF51822",
+		"NRF51_DK"
+	]
+}

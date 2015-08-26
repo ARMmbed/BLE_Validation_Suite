@@ -40,6 +40,11 @@
 BLE ble;
 DigitalOut myled(LED1);
 
+RawSerial console(USBTX, USBRX);
+uint8_t buffer[64];
+uint8_t bufferIndex = 0;
+
+void resetStateForNextTest(void);
 /**
 * Test for advertising using an iBeacon
 */
@@ -99,18 +104,19 @@ void changeAdvertisingInterval(void)
 void changeAdvPay(void)
 {
 
-    ble.gap().clearAdvertisingPayload();
-    ble.gap().setAdvertisingTimeout(0);
+    // ble.gap().clearAdvertisingPayload();
+    // ble.gap().setAdvertisingTimeout(0);
 
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::LE_GENERAL_DISCOVERABLE | GapAdvertisingData::BREDR_NOT_SUPPORTED));
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::OUTDOOR_GENERIC));
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayloadTxPower(10)); /* in dbm. */
+    // ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::LE_GENERAL_DISCOVERABLE | GapAdvertisingData::BREDR_NOT_SUPPORTED));
+    // ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::OUTDOOR_GENERIC));
+    // ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayloadTxPower(10)); /* in dbm. */
 
-    const static uint8_t trivialAdvPayload[] = {123, 123, 123, 123, 123};
-    ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload)));
+    // const static uint8_t trivialAdvPayload[] = {123, 123, 123, 123, 123};
+    // ASSERT_NO_FAILURE(ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload)));
 
-    ble.gap().setAdvertisingInterval(500); /* in milliseconds. */
-    ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    // ble.gap().setAdvertisingInterval(500); /* in milliseconds. */
+    // ASSERT_NO_FAILURE(ble.gap().startAdvertising());
+    printf("%d\r\n", ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
 }
 
@@ -135,18 +141,24 @@ void changeScanRes(void)
     printf("ASSERTIONS DONE\r\n");
 }
 
+void callbackTest(){
+    printf("runnning callbackTest\r\n");
+    resetStateForNextTest();
+    changeAdvPay();
+}
+
 /**
 * Test to change advertisement timeout.
 */
-void timeoutTest(void)
+void setTimeoutTest(void)
 {
-    ble.gap().setAdvertisingInterval(1000);
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
     ble.gap().setAdvertisingTimeout(5); /* 5 seconds */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
-    printf("ASSERTIONS DONE\r\n");
+    minar::Scheduler::postCallback(callbackTest).delay(minar::milliseconds(6000));
+    // printf("ASSERTIONS DONE\r\n");
 }
 
 /**
@@ -187,17 +199,18 @@ void commandInterpreter(void)
         /* implement a cheap command interpreter based on strcmp */
         if (!strcmp(command, "changeInterval"))     changeAdvertisingInterval();
         else if (!strcmp(command, "changePayload")) changeAdvPay();
-        else if (!strcmp(command, "setTimeout"))    timeoutTest();
+        else if (!strcmp(command, "setTimeout"))    setTimeoutTest();
         else if (!strcmp(command, "response"))      changeScanRes();
         else if (!strcmp(command, "detect"))        setupIBeaconTest();
         else if (!strcmp(command, "setAddr"))       setAddrTest();
         else if (!strcmp(command, "shutdown"))      shutdownTest();
 
         /* synchronize with the host python script */
-        unsigned synchroniztion;
-        scanf("%d", &synchroniztion);
+        // unsigned sync;
+        // scanf("%d", &sync);
 
-        resetStateForNextTest();
+        // resetStateForNextTest();
+        break;
     }
 }
 
@@ -233,6 +246,12 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
+void serialHandler(void)
+{
+
+    buffer[bufferIndex++] = console.getc());
+}
+
 void app_start(int, char*[])
 {
     unsigned errorCode = verifyBasicAssumptions();
@@ -254,6 +273,8 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]); /* sends the MAC address to the host PC. */
 
+    console.attach(serialHandler);
+    
     commandInterpreter();
 }
 

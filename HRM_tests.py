@@ -3,10 +3,14 @@ import datetime
 import time
 import sys
 import threading
+import json
 from types import *
 from Validation_Suite import *
 
-TIMEOUT = 30
+with open('config.json') as json_file:
+	config = json.load(json_file)
+
+TIMEOUT = config['timeout']
 
 '''! function be used in seperate thread to monitor another serial port in a seperate thread to stop blocking
 @param aSer the serial port to be monitored

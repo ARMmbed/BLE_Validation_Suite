@@ -9,10 +9,34 @@ import threading
 import itertools
 import types
 import os.path
+import pprint
 from types import *
 from pprint import pprint
 import HRM_tests as HRM
 import iBeacon_tests as iBeacon
+
+with open('config.json') as json_file:
+	config = json.load(json_file)
+
+TIMEOUT = config['timeout']
+
+def checkNodes():
+	platforms = json.load(open('platform.json'))
+	A = subprocess.check_output(['mbedls', '--json'])
+	mbeds = json.loads(A)
+	unSuppPlats = []
+	result = True
+	for mbed in mbeds:
+		if mbed['platform_name'] not in platforms['platforms']:
+			unSuppPlats.append(mbed['platform_name'])
+			result = False
+	if not result:
+		print 'Platforms not supported in config file'
+		pprint(unSuppPlats)
+		sys.exit()
+
+
+
 
 '''! uses mbedls, parses json output and returns object which is specified
 @param devNo the device number 0,1,2... up to number of devices plugged in and detected with mbedls
@@ -33,14 +57,21 @@ def getJson(devNo, var):
 @param file the name of the file being flashed in the same directory
 @param device the device type e.g. NRF51822
 '''
-def flashDevice(mount,serial,file,device):
-	subprocess.call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run'])
+def flashDevice(mount,serial,file,device, flash):
+	try:
+		if flash:
+			subprocess.check_call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run', '--skip-flashing'])
+		else:
+			subprocess.check_call(['mbedhtrun','-d', mount,'-f', file,'-p', serial,'-C', '2', '-c', 'copy', '-m', device, '--run'])
+	except:
+		print 'mbedhtrun failed'
+		sys.exit()
 	return 
 
 def checkInit(ser, str):
 	result = False
 	time1 = time.time()
-	while time.time() - time1 < 30:
+	while time.time() - time1 < TIMEOUT:
 		output = ser.readline()
 		if 'ASSERTIONS DONE' in output:
 			result = True
@@ -91,7 +122,7 @@ def iBeaconTest(aSer, bSer):
 	# dictionary of pairs of function and function names
 	testDict = dict(zip(names, funcs))
 
-	if '-i' not in sys.argv:
+	if not config['interactive']:
 		for i in testDict:
 			time.sleep(4)
 			print '\nRunning ' + str(i) + ' test\n'
@@ -171,7 +202,7 @@ def HRMTest(aSer, bSer):
 
 	testDictB = dict(zip(namesB, funcsB))
 
-	if '-i' not in sys.argv:
+	if 'interactive' not in config:
 		del testDictB['connect']
 		del testDictB['disconnect']
 		for i in testDictA:
@@ -297,37 +328,37 @@ def transferAddr(aSer, bSer):
 
 '''! builds the files to be flashed using yotta
 '''
-def yottaBuild():
+def yotta(str):
 	try:
 		if '-iBeacon' in sys.argv:
 			if '-mbedos' in sys.argv:
 				os.chdir('Aos')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 				os.chdir('Bos')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 			else:
 				os.chdir('A')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 				os.chdir('B')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 		elif '-HRM' in sys.argv:
 			if '-mbedos' in sys.argv:
 				os.chdir('AHRMOS')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 				os.chdir('BHRMOS')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 			else:
 				os.chdir('AHRM')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 				os.chdir('BHRM')
-				subprocess.check_call(['yt', 'build'])
+				subprocess.check_call(['yt', str])
 				os.chdir('..')
 		else:
 			print 'Invalid test name'
@@ -338,17 +369,21 @@ def yottaBuild():
 		sys.exit()
 
 
+
 '''! gets the file path from the yotta build system
 '''
-def yottaGetFiles():
-	yottaBuild()
+def yottaGetFiles(test):
+	if config['build_system']['yotta']['clean']:
+		yotta('clean')
+	if config['build_system']['yotta']['build']:
+		yotta('build')
 	#get the path of the hex file to be copied
-	if '-iBeacon' in sys.argv:
+	if test == 'iBeacon':
 		if '-mbedos' in sys.argv:
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")] 
    		else:
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
-   	elif '-HRM' in sys.argv:
+   	elif test == 'HRM':
    		if '-mbedos' in sys.argv:
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
    		else:
@@ -359,11 +394,11 @@ def yottaGetFiles():
 '''! gets the file name from the user input
 '''
 def getFiles():
-	index = sys.argv.index('-f')
-	path = []
+	if 'abs_path' not in config['build_system']:
+		print 'need abs_path in config file'
+		sys.exit()
 	try:
-		path.append(sys.argv[index + 1])
-		path.append(sys.argv[index + 2])
+		path = config['build_system']['abs_path']
 		if not os.path.exists(path[0]):
 			print path[0] + ' does not exist in current directory'
 			sys.exit()
@@ -371,11 +406,31 @@ def getFiles():
 			print path[1] + ' does not exist in current directory'
 			sys.exit()
 	except IndexError:
-		print 'Two files required'
+		print '2 files required in config file'
 		sys.exit()
 	return path
 
+def checkConfig():
+	result = True
+	configFail = []
+	configList = ['test_name', 'description', 'nodes', 'build_system', 'skip-flash', 'timeout', 'interactive']
+	for var in configList:
+		if var not in config:
+			configFail.append(var)
+			result = False
+	return (result, configFail)
+
+
 if __name__ == "__main__":
+	(result, configFail) = checkConfig()
+	if not result:
+		print 'config file does not include'
+		print configFail
+		sys.exit()
+
+	print config['description'].encode()
+
+	checkNodes()
 	# detect the mbed devices connected to the system
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
@@ -385,23 +440,22 @@ if __name__ == "__main__":
 	bName = getJson(1, 'platform_name')
 
 
-	if len(sys.argv) == 1 or '--help' in sys.argv or '-h' in sys.argv:
+	if '--help' in sys.argv or '-h' in sys.argv:
 		string = ('\nUse (-y) [-mbedos] to specific to build with yotta and if it should be bult for mbedos or mbed classic (mbed classic by default) |\n'
 			'Use (-f) (file1) (file2) to specify flashing with your own built binaries \n'
 			'(-HRM|-iBeacon) depending on what test you want to build'
 			'[i] for interactive mode where you can choose the test')
 		print string
 		sys.exit()
-	elif '-y' in sys.argv:
-		path = yottaGetFiles()
-	elif '-f' in sys.argv:
+
+	test = config['test_name']
+	if 'yotta' in config['build_system']:
+		path = yottaGetFiles(test)
+	elif 'abs_path' in config['build_system']:
 		path = getFiles()
-	else:
-		print 'Error: not enough arguments'
-		sys.exit()
-	flashDevice(aMount, aPort, path[0], aName)
-	flashDevice(bMount, bPort, path[1], bName)
 	
+	flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
+	flashDevice(bMount, bPort, path[1], bName, config['skip-flash'])
 
 	#Opens ports for logging 
 	print 'Opening serial ports from devices to PC\n'
@@ -412,11 +466,11 @@ if __name__ == "__main__":
 
 	transferAddr(aSer, bSer)
 
-	if '-iBeacon' in sys.argv:
+	if test == 'iBeacon':
 		iBeaconTest(aSer, bSer)
-	elif '-HRM' in sys.argv:
+	elif test == 'HRM':
 		HRMTest(aSer, bSer)
-	elif '-test' in sys.argv:
-		iBeaconTest(aSer, bSer)
 	else:
 		sys.exit()
+
+ 

@@ -1,0 +1,25 @@
+{
+	"test_name": "iBeacon",
+	"description": "test for advertisement APIs",
+	"nodes": {
+		"*": ["NRF51822"],
+		"0": [],
+		"1": []
+	},
+	"build_system": {
+		"mbedls": true,
+		"yotta": {
+			"set_target": false,
+			"target": "mkit-gcc",
+			"clean": false,
+			"build": true
+		},
+		"__abs_path": [
+			"A.hex",
+			"B.hex"
+		]
+	},
+	"skip-flash": false,
+	"timeout": 30,
+	"interactive": true
+}
