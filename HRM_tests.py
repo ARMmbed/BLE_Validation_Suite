@@ -111,7 +111,7 @@ def connParamTestA(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def readTestB(aSer,bSer):
-	print 'Reading HRM characteristic\n'
+	print '\tReading HRM characteristic\n'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
 		print '\tDevice must be connected'
@@ -132,7 +132,7 @@ def readTestB(aSer,bSer):
 @param bSer the serial object for device B 
 '''
 def writeTestB(aSer,bSer):
-	print 'Writing 1 to LED characteristic\n'
+	print '\tWriting 1 to LED characteristic\n'
 	outputB = bSer.readline()
 	if 'Devices must be connected' in outputB:
 		print '\tDevice must be connected'
@@ -154,7 +154,7 @@ def writeTestB(aSer,bSer):
 @param bSer the serial object for device B
 # '''	
 def notificationTestB(aSer, bSer):
-	print 'Enabling notifications\n'
+	print '\tEnabling notifications\n'
 	writeError = bSer.readline()
 	if '{{failure}}' in writeError:
 		print '\tMBED[B]: ' + writeError,

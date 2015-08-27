@@ -188,7 +188,7 @@ def HRMTest(aSer, bSer):
 
 	passList = []
 	failList = []
-	bSer.write('1\n')
+	# bSer.write('1\n')
 
 	# list comprehensions for generating lists of functions and tests from HRM_tests.py
 	namesA = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]

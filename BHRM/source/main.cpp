@@ -203,6 +203,9 @@ funcPtr getTest(){
 
     const DispatchTableEntry table[] = {
         {
+            "connect", connectTest
+        },
+        {
             "disconnect", disconnectTest
         },
         {
@@ -273,8 +276,8 @@ void writeCallback(const GattWriteCallbackParams *params)
 {
     if (params->handle == LEDCharacteristic->getValueHandle()) {
         ASSERT_NO_FAILURE(LEDCharacteristic->read());   
-    // } else if (params->handle == BTNCharacteristic.getValueHandle() + 1) {
-    //     printf("Sync\r\n");   
+    } else if (params->handle == BTNCharacteristic->getValueHandle() + 1) {
+        printf("Sync\r\n");   
     }
 }
 
@@ -288,7 +291,8 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 
 void app_start(int, char*[])
 {
-    buffer = (uint8_t*)malloc(24);
+    buffer = (uint8_t*)malloc(16);
+    memset(buffer, 0, strlen((char*)buffer));
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;
