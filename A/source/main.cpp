@@ -26,19 +26,17 @@
                         return; \
                     } \
                     }while (0)
-#define ASSERT_NO_FAILURE_INT(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return 1; \
-                    } \
-                    }while (0)                    
+                 
 #define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE ble;
-DigitalOut myled(LED1);
+
+typedef void (*funcPtr)();
+RawSerial console(USBTX, USBRX);
+uint8_t buffer[32];
+uint8_t bufferIndex = 0;
+
+void resetStateForNextTest(void);
 
 /**
 * Test for advertising using an iBeacon
@@ -85,7 +83,7 @@ void setAddrTest(void)
 /**
 * Test to change advertisement interval
 */
-void changeAdvertisingInterval(void)
+void changeIntervalTest(void)
 {
     ble.gap().setAdvertisingTimeout(0);
     ble.gap().setAdvertisingInterval(500); /* in milliseconds. */
@@ -96,7 +94,7 @@ void changeAdvertisingInterval(void)
 /**
 * Test to change advertisement payload
 */
-void changeAdvPay(void)
+void changePayloadTest(void)
 {
 
     ble.gap().clearAdvertisingPayload();
@@ -117,9 +115,8 @@ void changeAdvPay(void)
 /**
 * Test to change add a scan response
 */
-void changeScanRes(void)
+void responseTest(void)
 {
-
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
     ble.gap().setAdvertisingTimeout(0);
@@ -139,9 +136,8 @@ void changeScanRes(void)
 /**
 * Test to change advertisement timeout.
 */
-void timeoutTest(void)
+void setTimeoutTest(void)
 {
-    ble.gap().setAdvertisingInterval(1000);
     ble.gap().clearAdvertisingPayload();
     ble.gap().clearScanResponse();
 
@@ -163,7 +159,6 @@ void resetStateForNextTest(void)
 
     const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
-
 }
 
 void shutdownTest(void)
@@ -172,7 +167,49 @@ void shutdownTest(void)
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
-        
+}
+
+funcPtr getTest(){
+
+    struct DispatchTableEntry {
+        const char * command;
+        void (* handler)(void);
+    };
+
+    const DispatchTableEntry table[] = {
+        {
+            "1", resetStateForNextTest
+        },
+        {
+            "setAddr", setAddrTest
+        },
+        {
+            "changeInterval", changeIntervalTest
+        },
+        {
+            "changePayload", changePayloadTest
+        },
+        {
+            "setTimeout", setTimeoutTest
+        },
+        {
+            "response", responseTest
+        },
+        {
+            "shutdown", shutdownTest
+        },
+        {
+            "detect", setupIBeaconTest
+        }
+    };
+
+    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (unsigned i = 0; i < arraySize; i++){
+        if (!strcmp((const char*)buffer, table[i].command)){
+            return table[i].handler;
+        }
+    }
+    return NULL;
 }
 
 /**
@@ -180,26 +217,11 @@ void shutdownTest(void)
  */
 void commandInterpreter(void)
 {
-    const size_t MAX_SIZEOF_TESTNAME = 50;
-    
-    while (true) {
-        char command[MAX_SIZEOF_TESTNAME];
-        scanf("%s", command); /* fetch the testname from the host python script. */
-
-        /* implement a cheap command interpreter based on strcmp */
-        if (!strcmp(command, "changeInterval"))     changeAdvertisingInterval();
-        else if (!strcmp(command, "changePayload")) changeAdvPay();
-        else if (!strcmp(command, "setTimeout"))    timeoutTest();
-        else if (!strcmp(command, "response"))      changeScanRes();
-        else if (!strcmp(command, "detect"))        setupIBeaconTest();
-        else if (!strcmp(command, "setAddr"))       setAddrTest();
-        else if (!strcmp(command, "shutdown"))      shutdownTest();
-
-        /* synchronize with the host python script */
-        unsigned synchroniztion;
-        scanf("%d", &synchroniztion);
-
-        resetStateForNextTest();
+    funcPtr test = getTest();
+    if (test){
+        bufferIndex = 0;
+        memset(buffer, 0, strlen((char*)buffer));
+        test();
     }
 }
 
@@ -235,6 +257,15 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
+void serialHandler(void)
+{
+    char input = console.getc();
+    if (input != '\n' && input != '\r'){
+        buffer[bufferIndex++] = input;
+    }
+    commandInterpreter();
+}
+
 void app_start(int, char*[])
 {
     unsigned errorCode = verifyBasicAssumptions();
@@ -256,6 +287,8 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]); /* sends the MAC address to the host PC. */
 
+    console.attach(serialHandler);
+    
     commandInterpreter();
 }
 

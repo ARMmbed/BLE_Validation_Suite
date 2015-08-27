@@ -42,14 +42,13 @@
 BLE                      ble;
 Gap::Address_t           address;
 
-DiscoveredCharacteristic HRMCharacteristic;
+DiscoveredCharacteristic* HRMCharacteristic;
+DiscoveredCharacteristic* LEDCharacteristic;
+DiscoveredCharacteristic* BTNCharacteristic;
 bool                     HRMFound =          false;
-DiscoveredCharacteristic LEDCharacteristic;
 bool                     LEDFound =          false;
-// DiscoveredCharacteristic BTNCharacteristic;
-// bool                     BTNFound =          false;
+bool                     BTNFound =          false;
 Gap::Handle_t            deviceAHandle;
-
 /*
  * Call back when a service is discovered
  */
@@ -73,17 +72,17 @@ void serviceDiscoveryCallback(const DiscoveredService *service)
 void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP)
 {
     if (characteristicP->getUUID().getShortUUID() == 0x2a37) { /* Searches for HRM Characteristic*/
-        HRMCharacteristic = *characteristicP;
+        HRMCharacteristic = new DiscoveredCharacteristic(*characteristicP);
         HRMFound          = true;
     }
     if (characteristicP->getUUID().getShortUUID() == 0xA001) { /* Searches for LED Characteristic*/
-        LEDCharacteristic = *characteristicP;
+        LEDCharacteristic = new DiscoveredCharacteristic(*characteristicP);
         LEDFound          = true;
     }
-    // if (characteristicP->getUUID().getShortUUID() == 0xA003) {
-    //     BTNCharacteristic = *characteristicP;
-    //     BTNFound          = true;    
-    // }
+    if (characteristicP->getUUID().getShortUUID() == 0xA003) {
+        BTNCharacteristic = new DiscoveredCharacteristic(*characteristicP);
+        BTNFound          = true;    
+    }
 }
 
 /*
@@ -104,15 +103,15 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
  */
 void readCharacteristic(const GattReadCallbackParams *response)
 {
-    if (response->handle == HRMCharacteristic.getValueHandle()) {
+    if (response->handle == HRMCharacteristic->getValueHandle()) {
         printf("HRMCounter: %d\n",  response->data[1]);
     }
-    if (response->handle == LEDCharacteristic.getValueHandle()) {
+    if (response->handle == LEDCharacteristic->getValueHandle()) {
         printf("LED: %d\n", response->data[0]);
     }
-    // if (response->handle == BTNCharacteristic.getValueHandle()) {
-    //     printf("BTN: %d\n", response->data[0]);    
-    // }
+    if (response->handle == BTNCharacteristic->getValueHandle()) {
+        printf("BTN: %d\n", response->data[0]);    
+    }
 }
 
 /*
@@ -136,7 +135,7 @@ void readTest(){
         return;
     }
     if (HRMFound) {
-        ASSERT_NO_FAILURE(HRMCharacteristic.read());
+        ASSERT_NO_FAILURE(HRMCharacteristic->read());
     } else {
         printf("Characteristic not found\r\n");
     }
@@ -154,7 +153,7 @@ void writeTest()
     }
     if (LEDFound) {
         uint8_t write_value = 1;
-        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value), &write_value)); /* When write finishes, writeCallback is called */
+        ASSERT_NO_FAILURE(LEDCharacteristic->write(sizeof(write_value), &write_value)); /* When write finishes, writeCallback is called */
     } else {
         printf("Characeristic not found\r\n");
     }
@@ -172,23 +171,23 @@ void disconnectTest()
     }
 }
 
-// void notificationTest()
-// {
-//     if (!ble.gap().getState().connected) {
-//         printf("Devices must be connected before this test can be run\n");
-//         return;
-//     }
-//     if (BTNFound) {
-//         uint16_t value = BLE_HVX_NOTIFICATION;
-//         ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
-//                                    deviceAHandle,
-//                                    BTNCharacteristic.getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
-//                                    sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
-//                                    reinterpret_cast<const uint8_t *>(&value)));    
-//     } else {
-//         printf("Characteristic not found\r\r");    
-//     }
-// }
+void notificationTest()
+{
+    if (!ble.gap().getState().connected) {
+        printf("Devices must be connected before this test can be run\n");
+        return;
+    }
+    if (BTNFound) {
+        uint16_t value = BLE_HVX_NOTIFICATION;
+        ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
+                                   deviceAHandle,
+                                   BTNCharacteristic->getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
+                                   sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
+                                   reinterpret_cast<const uint8_t *>(&value)));    
+    } else {
+        printf("Characteristic not found\r\r");    
+    }
+}
 
 /**
  * Controls which tests are run from input from PC
@@ -206,8 +205,8 @@ void commandInterpreter()
             readTest();
         } else if (!strcmp(command, "write")) {
             writeTest();
-        // } else if (!strcmp(command, "notification")) {
-        //     notificationTest();
+        } else if (!strcmp(command, "notification")) {
+            notificationTest();
         }
     }
 }
@@ -217,8 +216,8 @@ void commandInterpreter()
  */
 void writeCallback(const GattWriteCallbackParams *params)
 {
-    if (params->handle == LEDCharacteristic.getValueHandle()) {
-        ASSERT_NO_FAILURE(LEDCharacteristic.read());   
+    if (params->handle == LEDCharacteristic->getValueHandle()) {
+        ASSERT_NO_FAILURE(LEDCharacteristic->read());   
     // } else if (params->handle == BTNCharacteristic.getValueHandle() + 1) {
     //     printf("Sync\r\n");   
     }

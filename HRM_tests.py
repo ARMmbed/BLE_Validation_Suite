@@ -153,21 +153,21 @@ def writeTestB(aSer,bSer):
 @param aSer the serial object for device A
 @param bSer the serial object for device B
 # '''	
-# def notificationTestB(aSer, bSer):
-# 	print 'Enabling notifications\n'
-# 	writeError = bSer.readline()
-# 	if '{{failure}}' in writeError:
-# 		print '\tMBED[B]: ' + writeError,
-# 		return False
-# 	if 'Devices must be connected' in writeError:
-# 		print '\tDevice must be connected'
-# 		return False
-# 	Sync = bSer.readline()
-# 	print '\tChanging button characteristic to 1'
-# 	aSer.write('notification\n')
-# 	hvxCallback = bSer.readline()
-# 	print '\tMBED[B]: ' + hvxCallback
-# 	return 'Button' in hvxCallback
+def notificationTestB(aSer, bSer):
+	print 'Enabling notifications\n'
+	writeError = bSer.readline()
+	if '{{failure}}' in writeError:
+		print '\tMBED[B]: ' + writeError,
+		return False
+	if 'Devices must be connected' in writeError:
+		print '\tDevice must be connected'
+		return False
+	Sync = bSer.readline()
+	print '\tChanging button characteristic to 1'
+	aSer.write('notification\n')
+	hvxCallback = bSer.readline()
+	print '\tMBED[B]: ' + hvxCallback
+	return 'Button' in hvxCallback
 
 '''! test to disconnect device B and device A, this enables certain tests to be able to run, only runnable when devices are connected
 @param aSer the serial object for device A

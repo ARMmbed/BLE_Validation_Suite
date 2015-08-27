@@ -320,7 +320,6 @@ def transferAddr(aSer, bSer):
 	print 'BLE Address of A: ',
 	print MAC
 	print 'Writing BLE MAC to device B'
-	print bSer.readline()
 	for i in MAC:
 		bSer.write(i + '\n')
 	print 'BLE MAC written'
