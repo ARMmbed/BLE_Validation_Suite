@@ -17,7 +17,6 @@
 #include "mbed.h"
 #include "ble/BLE.h"
 #include "ble/services/HeartRateService.h"
-#include "ble/services/BatteryService.h"
 #include "ble/services/DeviceInformationService.h"
 #include "LEDService.h"
 #include "ButtonService.h"
@@ -31,20 +30,16 @@
                         return; \
                     } \
                     }while (0)
-#define ASSERT_NO_FAILURE_INT(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return 1; \
-                    } \
-                    }while (0)
+
 #define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
 BLE                   ble;
 Gap::Address_t        address;
-GapAdvertisingData::Appearance appearance;
+
+typedef void (*funcPtr)();
+RawSerial console(USBTX, USBRX);
+uint8_t *buffer;
+uint8_t bufferIndex = 0;
 
 const static char     DEVICE_NAME[] = "HRMTEST";
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
@@ -96,6 +91,7 @@ void testAppearance()
         return;
     }
 
+    GapAdvertisingData::Appearance appearance;
     ASSERT_NO_FAILURE(ble.gap().setAppearance(GapAdvertisingData::GENERIC_PHONE));
     ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
     printf("ASSERTIONS DONE\r\n");
@@ -128,28 +124,79 @@ void connParams()
     ble.gap().setPreferredConnectionParams(&temp);
 }
 
-// void notificationTest(void) {
-//     btnServicePtr->updateButtonState(true);
-// }
+void notificationTest(void) {
+    btnServicePtr->updateButtonState(true);
+}
+
+
+funcPtr getTest(){
+
+    struct DispatchTableEntry {
+        const char * command;
+        void (* handler)(void);
+    };
+
+    const DispatchTableEntry table[] = {
+        {
+            "setDeviceName", testDeviceName
+        },
+        {
+            "appearance", testAppearance
+        },
+        {
+            "connParam", connParams
+        },
+        {
+            "notification", notificationTest
+        }
+    };
+
+    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (unsigned i = 0; i < arraySize; i++){
+        if (!strcmp((const char*)buffer, table[i].command)){
+            return table[i].handler;
+        }
+    }
+    return NULL;
+}
 
 void commandInterpreter(void)
 {
-    const static size_t MAX_SIZEOF_COMMAND = 50;
-    while (true) {
-        char command[MAX_SIZEOF_COMMAND];
-        scanf("%s", command);
-
-        if (!strcmp(command, "setDeviceName")) {
-            testDeviceName();
-        } else if (!strcmp(command, "appearance")) {
-            testAppearance();
-        } else if (!strcmp(command, "connParam")) {
-            connParams();
-        // } else if (!strcmp(command, "notification")) {
-        //     notificationTest();
-        }
+    funcPtr test = getTest();
+    if (test){
+        bufferIndex = 0;
+        memset(buffer, 0, strlen((char*)buffer));
+        test();
     }
 }
+
+void serialHandler(void)
+{
+    char input = console.getc();
+    if (input != '\n' && input != '\r'){
+        buffer[bufferIndex++] = input;
+    }
+    commandInterpreter();
+}
+
+// void commandInterpreter(void)
+// {
+//     const static size_t MAX_SIZEOF_COMMAND = 50;
+//     while (true) {
+//         char command[MAX_SIZEOF_COMMAND];
+//         scanf("%s", command);
+
+//         if (!strcmp(command, "setDeviceName")) {
+//             testDeviceName();
+//         } else if (!strcmp(command, "appearance")) {
+//             testAppearance();
+//         } else if (!strcmp(command, "connParam")) {
+//             connParams();
+//         } else if (!strcmp(command, "notification")) {
+//             notificationTest();
+//         }
+//     }
+// }
 
 /**
  * @return 0 if basic assumptions are validated. Non-zero returns are used to
@@ -188,6 +235,8 @@ unsigned verifyBasicAssumptions()
 
 void app_start(int, char*[])
 {
+    buffer = (uint8_t*)malloc(24);
+    printf("test\r\n");
     unsigned errorCode = ble.init();
     if (errorCode == 0) {
         uint8_t                   hrmCounter = 100; // init HRM to 100bps
@@ -195,12 +244,11 @@ void app_start(int, char*[])
 
         bool                      initialValueForLEDCharacteristic = false;
         LEDService               *ledService                       = new LEDService(ble, initialValueForLEDCharacteristic);
-
-        DeviceInformationService *deviceInfo = new DeviceInformationService(ble, "ARM", "Model1", "SN1", "hw-rev1", "fw-rev1", "soft-rev1");
         
         btnServicePtr = new ButtonService(ble, false); 
     }
     errorCode |= verifyBasicAssumptions();
+
     if (errorCode == 0) {
         printf("{{success}}\r\n{{end}}\r\n"); /* hand over control from the host test to the python script. */
     } else {
@@ -220,6 +268,8 @@ void app_start(int, char*[])
 
     /* write out the MAC address to allow the second level python script to target this device. */
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]);
+
+    console.attach(serialHandler);
 
     commandInterpreter();
 }

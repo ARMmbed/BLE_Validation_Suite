@@ -42,6 +42,11 @@
 BLE                      ble;
 Gap::Address_t           address;
 
+typedef void (*funcPtr)();
+RawSerial console(USBTX, USBRX);
+uint8_t *buffer;
+uint8_t bufferIndex = 0;
+
 DiscoveredCharacteristic* HRMCharacteristic;
 DiscoveredCharacteristic* LEDCharacteristic;
 DiscoveredCharacteristic* BTNCharacteristic;
@@ -189,27 +194,77 @@ void notificationTest()
     }
 }
 
+funcPtr getTest(){
+
+    struct DispatchTableEntry {
+        const char * command;
+        void (* handler)(void);
+    };
+
+    const DispatchTableEntry table[] = {
+        {
+            "disconnect", disconnectTest
+        },
+        {
+            "read", readTest
+        },
+        {
+            "write", writeTest
+        },
+        {
+            "notification", notificationTest
+        }
+    };
+
+    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (unsigned i = 0; i < arraySize; i++){
+        if (!strcmp((const char*)buffer, table[i].command)){
+            return table[i].handler;
+        }
+    }
+    return NULL;
+}
+
+void commandInterpreter(void)
+{
+    funcPtr test = getTest();
+    if (test){
+        bufferIndex = 0;
+        memset(buffer, 0, strlen((char*)buffer));
+        test();
+    }
+}
+
+void serialHandler(void)
+{
+    char input = console.getc();
+    if (input != '\n' && input != '\r'){
+        buffer[bufferIndex++] = input;
+    }
+    commandInterpreter();
+}
+
 /**
  * Controls which tests are run from input from PC
  */
-void commandInterpreter()
-{
-    char command[50];
-    while (true) {
-        scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
-        if (!strcmp(command, "connect")) {
-            connectTest();
-        } else if (!strcmp(command, "disconnect")) {
-            disconnectTest();
-        } else if (!strcmp(command, "read")) {
-            readTest();
-        } else if (!strcmp(command, "write")) {
-            writeTest();
-        } else if (!strcmp(command, "notification")) {
-            notificationTest();
-        }
-    }
-}
+// void commandInterpreter()
+// {
+//     char command[50];
+//     while (true) {
+//         scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
+//         if (!strcmp(command, "connect")) {
+//             connectTest();
+//         } else if (!strcmp(command, "disconnect")) {
+//             disconnectTest();
+//         } else if (!strcmp(command, "read")) {
+//             readTest();
+//         } else if (!strcmp(command, "write")) {
+//             writeTest();
+//         } else if (!strcmp(command, "notification")) {
+//             notificationTest();
+//         }
+//     }
+// }
 
 /**
  * Call back for writing to LED characteristic.
@@ -233,6 +288,7 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 
 void app_start(int, char*[])
 {
+    buffer = (uint8_t*)malloc(24);
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;
@@ -248,6 +304,9 @@ void app_start(int, char*[])
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
     ble.gattClient().onHVX(hvxCallback);
+
+    console.attach(serialHandler);
+
     commandInterpreter();
 }
 

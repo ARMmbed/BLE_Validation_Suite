@@ -202,7 +202,7 @@ def HRMTest(aSer, bSer):
 
 	testDictB = dict(zip(namesB, funcsB))
 
-	if 'interactive' not in config:
+	if not config['interactive']:
 		del testDictB['connect']
 		del testDictB['disconnect']
 		for i in testDictA:
@@ -299,6 +299,14 @@ def HRMTest(aSer, bSer):
 	for i in failList:
 			print i + ' ',
 
+def Block(aSer, bSer):
+	thread = threading.Thread(target = aSerialRead, args = (aSer,'\tMBED[A]: ',))
+	thread.daemon = True
+	thread.start()
+	print 'blocktest'
+	while(True):
+		print bSer.readline()
+
 '''! transfers MAC address of device A to device B
 @param aSer the serial object for device A
 @param bSer the serial object for device B
@@ -329,7 +337,7 @@ def transferAddr(aSer, bSer):
 '''
 def yotta(str):
 	try:
-		if '-iBeacon' in sys.argv:
+		if config['test_name'] == 'iBeacon':
 			if '-mbedos' in sys.argv:
 				os.chdir('Aos')
 				subprocess.check_call(['yt', str])
@@ -344,7 +352,7 @@ def yotta(str):
 				os.chdir('B')
 				subprocess.check_call(['yt', str])
 				os.chdir('..')
-		elif '-HRM' in sys.argv:
+		elif config['test_name'] == 'HRM':
 			if '-mbedos' in sys.argv:
 				os.chdir('AHRMOS')
 				subprocess.check_call(['yt', str])
@@ -359,6 +367,10 @@ def yotta(str):
 				os.chdir('BHRM')
 				subprocess.check_call(['yt', str])
 				os.chdir('..')
+		elif config['test_name'] == 'Block':
+			os.chdir('BLE_BlockTransfer')
+			subprocess.check_call(['yt', str])
+			os.chdir('..')
 		else:
 			print 'Invalid test name'
 			sys.exit()
@@ -387,6 +399,8 @@ def yottaGetFiles(test):
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
    		else:
    			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
+   	elif test == 'Block':
+   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-blocktransfer' in name if name.endswith("combined.hex")]
    	return path
 
 
@@ -469,6 +483,8 @@ if __name__ == "__main__":
 		iBeaconTest(aSer, bSer)
 	elif test == 'HRM':
 		HRMTest(aSer, bSer)
+	elif test == 'Block':
+		Block(aSer, bSer)
 	else:
 		sys.exit()
 

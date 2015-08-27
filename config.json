@@ -1,5 +1,5 @@
 {
-	"test_name": "iBeacon",
+	"test_name": "HRM",
 	"description": "test for advertisement APIs",
 	"nodes": {
 		"*": ["NRF51822"],
