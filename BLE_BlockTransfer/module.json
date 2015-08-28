@@ -1,0 +1,27 @@
+{
+  "name": "ble-blocktransfer",
+  "version": "0.0.1",
+  "description": "BLE Block Transfer example, building with yotta",
+  "author": "Marcus Chang <marcus.chang@arm.com>",
+  "licenses": [
+    {
+      "url": "https://spdx.org/licenses/Apache-2.0",
+      "type": "Apache-2.0"
+    }
+  ],
+  "dependencies": {
+  },
+  "targetDependencies": {
+    "mbed-os": {
+      "mbed-drivers": "0.6.4"
+    },
+    "mbed-classic": {
+      "mbed-classic": "~0.0.4"
+    },
+    "mbed": {
+      "ble": "~0.4.7",
+      "ble-blocktransfer-mbed": "~2.5.0"
+    }
+  },
+  "bin": "./source"
+}
