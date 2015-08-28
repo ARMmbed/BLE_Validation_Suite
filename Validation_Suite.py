@@ -300,12 +300,21 @@ def HRMTest(aSer, bSer):
 			print i + ' ',
 
 def Block(aSer, bSer):
-	thread = threading.Thread(target = aSerialRead, args = (aSer,'\tMBED[A]: ',))
-	thread.daemon = True
-	thread.start()
 	print 'blocktest'
-	while(True):
-		print bSer.readline()
+	time.sleep(3)
+	aSer.write('start\n')
+	startTime = time.time()
+	result = False
+	while time.time() - startTime < TIMEOUT:
+		outputA = aSer.readline()
+		print outputA,
+		if 'main: buffers match' in outputA:
+			result = True
+			break
+	if result:
+		print 'Block transfer successful'
+	else:
+		print 'Block transfer failed'
 
 '''! transfers MAC address of device A to device B
 @param aSer the serial object for device A
@@ -467,8 +476,13 @@ if __name__ == "__main__":
 	elif 'abs_path' in config['build_system']:
 		path = getFiles()
 	
-	flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
-	flashDevice(bMount, bPort, path[1], bName, config['skip-flash'])
+	if len(path) == 1:
+		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
+		flashDevice(bMount, bPort, path[0], bName, config['skip-flash'])
+	else:
+		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
+		flashDevice(bMount, bPort, path[1], bName, config['skip-flash'])
+
 
 	#Opens ports for logging 
 	print 'Opening serial ports from devices to PC\n'
@@ -477,11 +491,12 @@ if __name__ == "__main__":
 	port = int(bPort[3:])-1
 	bSer = serial.Serial(port,timeout = 5)
 
-	transferAddr(aSer, bSer)
 
 	if test == 'iBeacon':
+		transferAddr(aSer, bSer)
 		iBeaconTest(aSer, bSer)
 	elif test == 'HRM':
+		transferAddr(aSer, bSer)
 		HRMTest(aSer, bSer)
 	elif test == 'Block':
 		Block(aSer, bSer)

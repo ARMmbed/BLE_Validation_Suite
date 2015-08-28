@@ -1,5 +1,5 @@
 {
-	"test_name": "HRM",
+	"test_name": "Block",
 	"description": "test for advertisement APIs",
 	"nodes": {
 		"*": ["NRF51822"],
@@ -10,7 +10,7 @@
 		"mbedls": true,
 		"yotta": {
 			"set_target": false,
-			"target": "mkit-gcc",
+			"target": ["mkit-gcc", "mkit-gcc"],
 			"clean": false,
 			"build": true
 		},
