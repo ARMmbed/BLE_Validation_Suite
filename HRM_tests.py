@@ -23,6 +23,8 @@ def aSerialRead(aSer, str):
 			print str + output,
 		if 'Connected' in output:
 			return
+		if 'Disconnected' in output:
+			return
 
 '''! test function to monitor time between advertisements, enables certain tests to be able to run, only runnable when devices are disconnected
 @param aSer serial port of device A
@@ -174,9 +176,26 @@ def notificationTestB(aSer, bSer):
 @param bSer the serial object for device B 
 '''
 def disconnectTestB(aSer,bSer):
-	outputB = bSer.readline()
-	result = True
-	if '{{success}}' not in outputB:
-		print '\tMBED[B]: ' + outputB,
-		result = False
+	# outputB = bSer.readline()
+	# result = True
+	# if '{{success}}' not in outputB:
+	# 	print '\tMBED[B]: ' + outputB,
+	# 	result = False
+	# return result
+	thread = threading.Thread(target = aSerialRead, args = (aSer,'\tMBED[A]: ',))
+	thread.daemon = True
+	thread.start()
+	startTime = time.time()
+	result = False
+	while time.time() - startTime < TIMEOUT:
+		outputB = bSer.readline()
+		if 'Devices not connected' in outputB:
+			result = None
+			break
+		if '{{success}}' not in outputB and outputB != '':
+			print '\tMBED[B]: ' + outputB,
+		if 'Disconnected' in outputB:
+			time.sleep(2)
+			result = True
+			break
 	return result

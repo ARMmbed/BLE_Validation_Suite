@@ -54,6 +54,13 @@ bool                     HRMFound =          false;
 bool                     LEDFound =          false;
 bool                     BTNFound =          false;
 Gap::Handle_t            deviceAHandle;
+
+void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
+{
+    printf("Disconnected\r\n");
+}
+
+
 /*
  * Call back when a service is discovered
  */
@@ -292,7 +299,6 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 void app_start(int, char*[])
 {
     buffer = (uint8_t*)malloc(24);
-    // memset(buffer, 0, strlen((char*)buffer));
     memset(buffer, 0, 24);
     printf("{{end}}\n"); /* Hands control over to Python script */
 
@@ -306,6 +312,7 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
     printf("ASSERTIONS DONE\r\n");
     ble.gap().onConnection(connectionCallback);
+    ble.gap().onDisconnection(disconnectionCallback);
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
     ble.gattClient().onHVX(hvxCallback);

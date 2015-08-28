@@ -50,6 +50,7 @@ ButtonService *btnServicePtr;
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
+    printf("Disconnected\r\n");
     ble.gap().startAdvertising(); // restart advertising
 }
 

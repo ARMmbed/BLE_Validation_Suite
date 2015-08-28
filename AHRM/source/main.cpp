@@ -50,6 +50,7 @@ ButtonService *btnServicePtr;
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
+    printf("Disconnected\r\n");
     ble.gap().startAdvertising(); // restart advertising
 }
 
@@ -237,7 +238,7 @@ void app_start(int, char*[])
 {
     buffer = (uint8_t*)malloc(24);
     memset(buffer, 0, 24);
-    
+
     unsigned errorCode = ble.init();
     if (errorCode == 0) {
         uint8_t                   hrmCounter = 100; // init HRM to 100bps
