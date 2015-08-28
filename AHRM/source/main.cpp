@@ -236,7 +236,8 @@ unsigned verifyBasicAssumptions()
 void app_start(int, char*[])
 {
     buffer = (uint8_t*)malloc(24);
-
+    memset(buffer, 0, 24);
+    
     unsigned errorCode = ble.init();
     if (errorCode == 0) {
         uint8_t                   hrmCounter = 100; // init HRM to 100bps

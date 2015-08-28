@@ -291,8 +291,8 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 
 void app_start(int, char*[])
 {
-    buffer = (uint8_t*)malloc(16);
-    memset(buffer, 0, strlen((char*)buffer));
+    buffer = (uint8_t*)malloc(24);
+    memset(buffer, 0, 24);
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;

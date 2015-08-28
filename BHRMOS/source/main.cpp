@@ -42,15 +42,18 @@
 BLE                      ble;
 Gap::Address_t           address;
 
-DiscoveredCharacteristic HRMCharacteristic;
-bool                     HRMFound =          false;
-DiscoveredCharacteristic LEDCharacteristic;
-bool                     LEDFound =          false;
-// DiscoveredCharacteristic BTNCharacteristic;
-// bool                     BTNFound =          false;
-Gap::Handle_t            deviceAHandle;
-DigitalOut myled(LED1);
+typedef void (*funcPtr)();
+RawSerial console(USBTX, USBRX);
+uint8_t *buffer;
+uint8_t bufferIndex = 0;
 
+DiscoveredCharacteristic* HRMCharacteristic;
+DiscoveredCharacteristic* LEDCharacteristic;
+DiscoveredCharacteristic* BTNCharacteristic;
+bool                     HRMFound =          false;
+bool                     LEDFound =          false;
+bool                     BTNFound =          false;
+Gap::Handle_t            deviceAHandle;
 /*
  * Call back when a service is discovered
  */
@@ -74,17 +77,17 @@ void serviceDiscoveryCallback(const DiscoveredService *service)
 void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteristicP)
 {
     if (characteristicP->getUUID().getShortUUID() == 0x2a37) { /* Searches for HRM Characteristic*/
-        HRMCharacteristic = *characteristicP;
+        HRMCharacteristic = new DiscoveredCharacteristic(*characteristicP);
         HRMFound          = true;
     }
     if (characteristicP->getUUID().getShortUUID() == 0xA001) { /* Searches for LED Characteristic*/
-        LEDCharacteristic = *characteristicP;
+        LEDCharacteristic = new DiscoveredCharacteristic(*characteristicP);
         LEDFound          = true;
     }
-    // if (characteristicP->getUUID().getShortUUID() == 0xA003) {
-    //     BTNCharacteristic = *characteristicP;
-    //     BTNFound          = true;    
-    // }
+    if (characteristicP->getUUID().getShortUUID() == 0xA003) {
+        BTNCharacteristic = new DiscoveredCharacteristic(*characteristicP);
+        BTNFound          = true;    
+    }
 }
 
 /*
@@ -92,7 +95,6 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
  */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
 {
-    myled = 1;
     printf("Connected to: %d:%d:%d:%d:%d:%d\n",
            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
     if (params->role == Gap::CENTRAL) {
@@ -106,15 +108,15 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params)
  */
 void readCharacteristic(const GattReadCallbackParams *response)
 {
-    if (response->handle == HRMCharacteristic.getValueHandle()) {
+    if (response->handle == HRMCharacteristic->getValueHandle()) {
         printf("HRMCounter: %d\n",  response->data[1]);
     }
-    if (response->handle == LEDCharacteristic.getValueHandle()) {
+    if (response->handle == LEDCharacteristic->getValueHandle()) {
         printf("LED: %d\n", response->data[0]);
     }
-    // if (response->handle == BTNCharacteristic.getValueHandle()) {
-    //     printf("BTN: %d\n", response->data[0]);    
-    // }
+    if (response->handle == BTNCharacteristic->getValueHandle()) {
+        printf("BTN: %d\n", response->data[0]);    
+    }
 }
 
 /*
@@ -124,7 +126,6 @@ void connectTest()
 {
     if (!(ble.gap().getState().connected)) {
         ASSERT_NO_FAILURE(ble.gap().connect(address, Gap::ADDR_TYPE_RANDOM_STATIC, NULL, NULL));
-        myled = 0;
     } else {
         printf("Devices already connected\n");
     }
@@ -139,7 +140,7 @@ void readTest(){
         return;
     }
     if (HRMFound) {
-        ASSERT_NO_FAILURE(HRMCharacteristic.read());
+        ASSERT_NO_FAILURE(HRMCharacteristic->read());
     } else {
         printf("Characteristic not found\r\n");
     }
@@ -157,7 +158,7 @@ void writeTest()
     }
     if (LEDFound) {
         uint8_t write_value = 1;
-        ASSERT_NO_FAILURE(LEDCharacteristic.write(sizeof(write_value), &write_value)); /* When write finishes, writeCallback is called */
+        ASSERT_NO_FAILURE(LEDCharacteristic->write(sizeof(write_value), &write_value)); /* When write finishes, writeCallback is called */
     } else {
         printf("Characeristic not found\r\n");
     }
@@ -175,55 +176,108 @@ void disconnectTest()
     }
 }
 
-// void notificationTest()
-// {
-//     if (!ble.gap().getState().connected) {
-//         printf("Devices must be connected before this test can be run\n");
-//         return;
-//     }
-//     if (BTNFound) {
-//         uint16_t value = BLE_HVX_NOTIFICATION;
-//         ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
-//                                    deviceAHandle,
-//                                    BTNCharacteristic.getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
-//                                    sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
-//                                    reinterpret_cast<const uint8_t *>(&value)));    
-//     } else {
-//         printf("Characteristic not found\r\r");    
-//     }
-// }
+void notificationTest()
+{
+    if (!ble.gap().getState().connected) {
+        printf("Devices must be connected before this test can be run\n");
+        return;
+    }
+    if (BTNFound) {
+        uint16_t value = BLE_HVX_NOTIFICATION;
+        ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
+                                   deviceAHandle,
+                                   BTNCharacteristic->getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
+                                   sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
+                                   reinterpret_cast<const uint8_t *>(&value)));    
+    } else {
+        printf("Characteristic not found\r\r");    
+    }
+}
+
+funcPtr getTest(){
+
+    struct DispatchTableEntry {
+        const char * command;
+        void (* handler)(void);
+    };
+
+    const DispatchTableEntry table[] = {
+        {
+            "connect", connectTest
+        },
+        {
+            "disconnect", disconnectTest
+        },
+        {
+            "read", readTest
+        },
+        {
+            "write", writeTest
+        },
+        {
+            "notification", notificationTest
+        }
+    };
+
+    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (unsigned i = 0; i < arraySize; i++){
+        if (!strcmp((const char*)buffer, table[i].command)){
+            return table[i].handler;
+        }
+    }
+    return NULL;
+}
+
+void commandInterpreter(void)
+{
+    funcPtr test = getTest();
+    if (test){
+        bufferIndex = 0;
+        memset(buffer, 0, strlen((char*)buffer));
+        test();
+    }
+}
+
+void serialHandler(void)
+{
+    char input = console.getc();
+    if (input != '\n' && input != '\r'){
+        buffer[bufferIndex++] = input;
+    }
+    commandInterpreter();
+}
 
 /**
  * Controls which tests are run from input from PC
  */
-void commandInterpreter()
-{
-    char command[50];
-    while (true) {
-        scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
-        if (!strcmp(command, "connect")) {
-            connectTest();
-        } else if (!strcmp(command, "disconnect")) {
-            disconnectTest();
-        } else if (!strcmp(command, "read")) {
-            readTest();
-        } else if (!strcmp(command, "write")) {
-            writeTest();
-        // } else if (!strcmp(command, "notification")) {
-        //     notificationTest();
-        }
-    }
-}
+// void commandInterpreter()
+// {
+//     char command[50];
+//     while (true) {
+//         scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
+//         if (!strcmp(command, "connect")) {
+//             connectTest();
+//         } else if (!strcmp(command, "disconnect")) {
+//             disconnectTest();
+//         } else if (!strcmp(command, "read")) {
+//             readTest();
+//         } else if (!strcmp(command, "write")) {
+//             writeTest();
+//         } else if (!strcmp(command, "notification")) {
+//             notificationTest();
+//         }
+//     }
+// }
 
 /**
  * Call back for writing to LED characteristic.
  */
 void writeCallback(const GattWriteCallbackParams *params)
 {
-    if (params->handle == LEDCharacteristic.getValueHandle()) {
-        ASSERT_NO_FAILURE(LEDCharacteristic.read());   
-    // } else if (params->handle == BTNCharacteristic.getValueHandle() + 1) {
-    //     printf("Sync\r\n");   
+    if (params->handle == LEDCharacteristic->getValueHandle()) {
+        ASSERT_NO_FAILURE(LEDCharacteristic->read());   
+    } else if (params->handle == BTNCharacteristic->getValueHandle() + 1) {
+        printf("Sync\r\n");   
     }
 }
 
@@ -237,7 +291,9 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 
 void app_start(int, char*[])
 {
-    myled = 1;
+    buffer = (uint8_t*)malloc(24);
+    // memset(buffer, 0, strlen((char*)buffer));
+    memset(buffer, 0, 24);
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;
@@ -253,6 +309,9 @@ void app_start(int, char*[])
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
     ble.gattClient().onHVX(hvxCallback);
+
+    console.attach(serialHandler);
+
     commandInterpreter();
 }
 
