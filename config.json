@@ -1,22 +1,22 @@
 {
-	"test_name": "Block",
+	"test_name": "iBeacon",
 	"description": "test for advertisement APIs",
 	"nodes": {
-		"*": ["NRF51822"],
+		"*": ["NUCLEO_F411RE"],
 		"0": [],
 		"1": []
 	},
 	"build_system": {
 		"mbedls": true,
-		"yotta": {
+		"__yotta": {
 			"set_target": false,
 			"target": ["mkit-gcc", "mkit-gcc"],
 			"clean": false,
 			"build": true
 		},
-		"__abs_path": [
-			"A.hex",
-			"B.hex"
+		"abs_path": [
+			"ble-ibeacon-a-combined.hex",
+			"ble-ibeacon-b-combined.hex"
 		]
 	},
 	"skip-flash": false,

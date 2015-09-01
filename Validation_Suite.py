@@ -76,7 +76,7 @@ def checkInit(ser, str):
 		if 'ASSERTIONS DONE' in output:
 			result = True
 			break
-		if '{{success}}' not in output:
+		if '{{success}}' not in output and output != '':
 			print '\tMBED[{0}]: '.format(str) + output,
 			result = True
 		if 'Device must be' in output:
@@ -88,6 +88,8 @@ def checkInit(ser, str):
 		if '{{failure}}' in output:
 			result = False
 			break
+	if not result:
+		print 'Check initial conditions failed'
 	return result
 
 '''! flushes the serial ports for device A and B
@@ -132,8 +134,10 @@ def iBeaconTest(aSer, bSer):
 			if result is None:
 				pass
 			elif result:
+				print '\nTest passed'
 				passList = passList + [i]
 			else:
+				print '\nTest failed'
 				failList = failList + [i]
 			aSer.write('1\n')
 	else:
@@ -158,10 +162,12 @@ def iBeaconTest(aSer, bSer):
 			if result is None:
 				pass
 			elif result:
+				print '\nTest passed'
 				if testInput in failList:
 					failList.remove(testInput)
 				passList = (list(set(passList + [testInput])))
 			else:
+				print '\nTest failed'
 				if testInput not in passList:
 					failList = (list(set(failList + [testInput])))
 			flushSerials(aSer, bSer)
@@ -213,8 +219,10 @@ def HRMTest(aSer, bSer):
 			if result is None:
 				pass
 			elif result:
+				print '\nTest passed'
 				passList = passList + [i]
 			else:
+				print '\nTest failed'
 				failList = failList + [i]
 			time.sleep(2)
 		flushSerials(aSer, bSer)
@@ -236,8 +244,10 @@ def HRMTest(aSer, bSer):
 			if result is None:
 				pass
 			elif result:
+				print '\nTest passed'
 				passList = passList + [i]
 			else:
+				print '\nTest failed'
 				failList = failList + [i]
 			time.sleep(2)
 		flushSerials(aSer, bSer)
@@ -248,8 +258,10 @@ def HRMTest(aSer, bSer):
 		if result is None:
 			pass
 		elif result:
+			print '\nTest passed'
 			passList = passList + ['disconnect']
 		else:
+			print '\nTest failed'
 			failList = failList + ['disconnect']
 		print ''
 	else:
@@ -347,14 +359,6 @@ def transferAddr(aSer, bSer):
 def yotta(str):
 	try:
 		if config['test_name'] == 'iBeacon':
-			# if '-mbedos' in sys.argv:
-			# 	os.chdir('Aos')
-			# 	subprocess.check_call(['yt', str])
-			# 	os.chdir('..')
-			# 	os.chdir('Bos')
-			# 	subprocess.check_call(['yt', str])
-			# 	os.chdir('..')
-			# else:
 			os.chdir('A')
 			subprocess.check_call(['yt', str])
 			os.chdir('..')
@@ -362,14 +366,6 @@ def yotta(str):
 			subprocess.check_call(['yt', str])
 			os.chdir('..')
 		elif config['test_name'] == 'HRM':
-			# if '-mbedos' in sys.argv:
-			# 	os.chdir('AHRMOS')
-			# 	subprocess.check_call(['yt', str])
-			# 	os.chdir('..')
-			# 	os.chdir('BHRMOS')
-			# 	subprocess.check_call(['yt', str])
-			# 	os.chdir('..')
-			# else:
 			os.chdir('AHRM')
 			subprocess.check_call(['yt', str])
 			os.chdir('..')
@@ -399,23 +395,14 @@ def yottaGetFiles(test):
 		yotta('build')
 	# get the path of the hex file to be copied
 	if test == 'iBeacon':
-		# if '-mbedos' in sys.argv:
-  #  			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")] 
-  #  		else:
-  #  			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
    	elif test == 'HRM':
-   		# if '-mbedos' in sys.argv:
-   		# 	path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
-   		# else:
-   		# 	path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
    		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
    	elif test == 'Block':
    		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-blocktransfer' in name if name.endswith("combined.hex")]
    	if not path:
    		print 'could not find path'
    		sys.exit()
-   	print path
    	return path
 
 
@@ -426,6 +413,8 @@ def getFiles():
 		print 'need abs_path in config file'
 		sys.exit()
 	try:
+		if config['test_name'] == 'Block':
+			path = [config['build_system']['abs_path']]
 		path = config['build_system']['abs_path']
 		if not os.path.exists(path[0]):
 			print path[0] + ' does not exist in current directory'
@@ -484,7 +473,9 @@ if __name__ == "__main__":
 	else:
 		print 'need yotta or abs_path in build_system in config'
 		sys.exit()
+   	print path
 
+   	#
 	if len(path) == 1:
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
 		flashDevice(bMount, bPort, path[0], bName, config['skip-flash'])
@@ -496,9 +487,9 @@ if __name__ == "__main__":
 	#Opens ports for logging 
 	print 'Opening serial ports from devices to PC\n'
 	port = int(aPort[3:])-1
-	aSer = serial.Serial(port)
+	aSer = serial.Serial(port, timeout = 5)
 	port = int(bPort[3:])-1
-	bSer = serial.Serial(port,timeout = 5)
+	bSer = serial.Serial(port, timeout = 5)
 
 
 	if test == 'iBeacon':

@@ -20,9 +20,9 @@ TIMEOUT = config['timeout']
 def approxEqual(x, y, range):
 	return abs(x-y) <= range
 
-'''! tests if the iBeacon service works and prints when an advert is detected
+'''! tests if the iBeacon service works on A and prints when an advert is detected on the B side
 @param aSer the serial object for device A
-@param bSer the serial object for device B 
+@param bSer the serial object for device B
 '''
 def detectTest(aSer,bSer):
 	print '\tSetting up iBeacon service'
@@ -150,7 +150,7 @@ def setTimeoutTest(aSer,bSer):
 
 
 def shutdownTest(aSer, bSer):
-	print '\tShutting down ble services and rebooting, may take some time'
+	print '\tShutting down ble services and reinitialising, may take some time'
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		startTime = time.time()
