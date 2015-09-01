@@ -25,6 +25,7 @@ def approxEqual(x, y, range):
 @param bSer the serial object for device B 
 '''
 def detectTest(aSer,bSer):
+	print '\tSetting up iBeacon service'
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		counter = 0
@@ -57,6 +58,7 @@ def setAddrTest(aSer,bSer):
 @param bSer the serial object for device B 
 '''	
 def changeIntervalTest(aSer,bSer):
+	print '\tSetting advertising interval to 0.5 seconds'
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		PASS_COUNTER = 5
@@ -148,6 +150,7 @@ def setTimeoutTest(aSer,bSer):
 
 
 def shutdownTest(aSer, bSer):
+	print '\tShutting down ble services and rebooting, may take some time'
 	result = suite.checkInit(aSer, 'A')
 	if result:
 		startTime = time.time()

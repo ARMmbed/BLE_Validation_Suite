@@ -9,11 +9,17 @@
     }
   ],
   "dependencies": {
-      "mbed-classic": "~0.0.4",
-      "ble": "ARMmbed/BLE_API",
-      "ble-nrf51822": "ARMmbed/nrf51822"
   },
-  "targetDependencies": {},
+  "targetDependencies": {
+    "mbed-os": {
+    },
+    "mbed-classic": {
+      "mbed-classic": "~0.0.4"
+    },
+    "mbed": {
+      "ble": "~0.4.7"
+    }
+  },
   "bin": "./source"
 }
 

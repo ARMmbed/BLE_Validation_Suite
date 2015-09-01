@@ -300,14 +300,14 @@ def HRMTest(aSer, bSer):
 			print i + ' ',
 
 def Block(aSer, bSer):
-	print 'blocktest'
+	print '\t Testing block transfer service'
 	time.sleep(3)
 	aSer.write('start\n')
 	startTime = time.time()
 	result = False
 	while time.time() - startTime < TIMEOUT:
 		outputA = aSer.readline()
-		print outputA,
+		print 'MBED[A]: ' + outputA,
 		if 'main: buffers match' in outputA:
 			result = True
 			break
@@ -347,35 +347,35 @@ def transferAddr(aSer, bSer):
 def yotta(str):
 	try:
 		if config['test_name'] == 'iBeacon':
-			if '-mbedos' in sys.argv:
-				os.chdir('Aos')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-				os.chdir('Bos')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-			else:
-				os.chdir('A')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-				os.chdir('B')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
+			# if '-mbedos' in sys.argv:
+			# 	os.chdir('Aos')
+			# 	subprocess.check_call(['yt', str])
+			# 	os.chdir('..')
+			# 	os.chdir('Bos')
+			# 	subprocess.check_call(['yt', str])
+			# 	os.chdir('..')
+			# else:
+			os.chdir('A')
+			subprocess.check_call(['yt', str])
+			os.chdir('..')
+			os.chdir('B')
+			subprocess.check_call(['yt', str])
+			os.chdir('..')
 		elif config['test_name'] == 'HRM':
-			if '-mbedos' in sys.argv:
-				os.chdir('AHRMOS')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-				os.chdir('BHRMOS')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-			else:
-				os.chdir('AHRM')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
-				os.chdir('BHRM')
-				subprocess.check_call(['yt', str])
-				os.chdir('..')
+			# if '-mbedos' in sys.argv:
+			# 	os.chdir('AHRMOS')
+			# 	subprocess.check_call(['yt', str])
+			# 	os.chdir('..')
+			# 	os.chdir('BHRMOS')
+			# 	subprocess.check_call(['yt', str])
+			# 	os.chdir('..')
+			# else:
+			os.chdir('AHRM')
+			subprocess.check_call(['yt', str])
+			os.chdir('..')
+			os.chdir('BHRM')
+			subprocess.check_call(['yt', str])
+			os.chdir('..')
 		elif config['test_name'] == 'Block':
 			os.chdir('BLE_BlockTransfer')
 			subprocess.check_call(['yt', str])
@@ -397,19 +397,25 @@ def yottaGetFiles(test):
 		yotta('clean')
 	if config['build_system']['yotta']['build']:
 		yotta('build')
-	#get the path of the hex file to be copied
+	# get the path of the hex file to be copied
 	if test == 'iBeacon':
-		if '-mbedos' in sys.argv:
-   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")] 
-   		else:
-   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
+		# if '-mbedos' in sys.argv:
+  #  			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-ibeacon' in name if name.endswith("combined.hex")] 
+  #  		else:
+  #  			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
+  		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
    	elif test == 'HRM':
-   		if '-mbedos' in sys.argv:
-   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
-   		else:
-   			path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
+   		# if '-mbedos' in sys.argv:
+   		# 	path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-mbedos-hrm' in name if name.endswith("combined.hex")]
+   		# else:
+   		# 	path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
+   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-hrm' in name if name.endswith("combined.hex")]
    	elif test == 'Block':
    		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-blocktransfer' in name if name.endswith("combined.hex")]
+   	if not path:
+   		print 'could not find path'
+   		sys.exit()
+   	print path
    	return path
 
 
@@ -475,7 +481,10 @@ if __name__ == "__main__":
 		path = yottaGetFiles(test)
 	elif 'abs_path' in config['build_system']:
 		path = getFiles()
-	
+	else:
+		print 'need yotta or abs_path in build_system in config'
+		sys.exit()
+
 	if len(path) == 1:
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
 		flashDevice(bMount, bPort, path[0], bName, config['skip-flash'])

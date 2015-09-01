@@ -59,7 +59,7 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
 }
 
-void testDeviceName()
+void setDeviceNameTest()
 {
     if (ble.gap().getState().connected) {
         printf("Device must be disconnected\n");
@@ -85,7 +85,7 @@ void testDeviceName()
     printf("\r\n");
 }
 
-void testAppearance()
+void appearanceTest()
 {
     if ((ble.gap().getState().connected)) {
         printf("Device must be disconnected\n");
@@ -99,7 +99,7 @@ void testAppearance()
     printf("%d\r\n", appearance);
 }
 
-void connParams()
+void connParamTest()
 {
     if ((ble.gap().getState().connected)) {
         printf("Device must be disconnected\n");
@@ -139,13 +139,13 @@ funcPtr getTest(){
 
     const DispatchTableEntry table[] = {
         {
-            "setDeviceName", testDeviceName
+            "setDeviceName", setDeviceNameTest
         },
         {
-            "appearance", testAppearance
+            "appearance", appearanceTest
         },
         {
-            "connParam", connParams
+            "connParam", connParamTest
         },
         {
             "notification", notificationTest

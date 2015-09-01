@@ -54,15 +54,12 @@ maxWriteLength = 256;
 static BLE ble;
 
 // Transfer large blocks of data on platforms without Fragmentation-And-Recombination
-static BlockTransferService bts;
-static BlockTransferClient btc;
+static BlockTransferService *bts;
+static BlockTransferClient *btc;
 
-// debug led - blinks to show liveness
-static Ticker ticker;
-static DigitalOut mbed_led1(LED1);
 
 // measure throughput
-static Timer watch;
+static Timer *watch;
 
 // buffers for sending and receiving data
 static uint8_t receiveBuffer[maxWriteLength];
@@ -125,13 +122,7 @@ static void signalReady();
 /*****************************************************************************/
 /* Debug                                                                     */
 /*****************************************************************************/
-/*
-    Called once every second. Blinks LED.
-*/
-void periodicCallback(void)
-{
-    mbed_led1 = !mbed_led1;
-}
+
 
 /*****************************************************************************/
 /* Block Transfer Server                                                     */
@@ -160,7 +151,7 @@ Block* blockServerReadHandler(uint32_t offset)
 */
 Block* blockServerWriteHandler(Block* block)
 {
-    printf("main: block write: length: %4lu offset: %6lu time: %3d ms\r\n", block->getLength(), block->getOffset(), watch.read_ms());
+    printf("main: block write: length: %4lu offset: %6lu time: %3d ms\r\n", block->getLength(), block->getOffset(), watch->read_ms());
 
 #if VERBOSE_DEBUG_OUTPUT
     for (std::size_t idx = 0; idx < block->getLength(); idx++)
@@ -171,14 +162,14 @@ Block* blockServerWriteHandler(Block* block)
 #endif
 
     // the Block Transfer service is not busy
-    if (bts.ready())
+    if (bts->ready())
     {
         // signal data is available to be read
         signalReady();
     }
 
     // reset timer to measure time to next block
-    watch.reset();
+    watch->reset();
 
     /*
         Return block to Block Transfer Service.
@@ -253,7 +244,7 @@ void clientNotification()
 {
     printf("main: client notification\r\n");
 
-    btc.read(&receiveBlock, clientReadDone);
+    btc->read(&receiveBlock, clientReadDone);
 }
 
 /*
@@ -280,7 +271,7 @@ void clientReady()
 #endif
 
     // start transfer
-    btc.write(&writeBlock, clientWriteDone);
+    btc->write(&writeBlock, clientWriteDone);
 }
 
 /*****************************************************************************/
@@ -351,12 +342,12 @@ void whenConnected(const Gap::ConnectionCallbackParams_t* params)
         if (peripheralIsServer == false)
         {
             // initialize Block Transfer client
-            btc.init(clientReady, uuid, params->handle);
-            btc.onNotification(clientNotification);
+            btc->init(clientReady, uuid, params->handle);
+            btc->onNotification(clientNotification);
         }
         else
         {
-            watch.start();
+            watch->start();
         }
     }
     else
@@ -368,12 +359,12 @@ void whenConnected(const Gap::ConnectionCallbackParams_t* params)
         if (peripheralIsServer == true)
         {
             // initialize Block Transfer client
-            btc.init(clientReady, uuid, params->handle);
-            btc.onNotification(clientNotification);
+            btc->init(clientReady, uuid, params->handle);
+            btc->onNotification(clientNotification);
         }
         else
         {
-            watch.start();
+            watch->start();
         }
     }
 }
@@ -386,8 +377,8 @@ void whenDisconnected(Gap::Handle_t, Gap::DisconnectionReason_t)
     printf("main: Disconnected!\r\n");
     printf("main: Restarting the advertising process\r\n");
 
-    watch.stop();
-    watch.reset();
+    watch->stop();
+    watch->reset();
 
     ble.gap().startAdvertising();
 }
@@ -546,7 +537,11 @@ void app_start(int, char *[])
 
     /*************************************************************************/
     /*************************************************************************/
-    bts.init(uuid, SecurityManager::SECURITY_MODE_ENCRYPTION_OPEN_LINK);
+    bts = new BlockTransferService();
+    btc = new BlockTransferClient();
+    watch = new Timer();
+
+    bts->init(uuid, SecurityManager::SECURITY_MODE_ENCRYPTION_OPEN_LINK);
 
 #if 0
     writeBlock.push_back(&writeBlockFragment2);
@@ -555,11 +550,9 @@ void app_start(int, char *[])
 #endif
 
     // set callback functions
-    bts.setWriteAuthorizationCallback(blockServerWriteHandler, &receiveBlock);
-    bts.setReadAuthorizationCallback(blockServerReadHandler);
+    bts->setWriteAuthorizationCallback(blockServerWriteHandler, &receiveBlock);
+    bts->setReadAuthorizationCallback(blockServerReadHandler);
 
-    // blink led
-    ticker.attach(periodicCallback, 1.0);
 
     printf("BlockTransfer: %s %s %d\r\n", __DATE__, __TIME__, MAX_INDEX_SET_SIZE);
 }
@@ -579,7 +572,7 @@ void app_start(int, char *[])
 */
 void sendNotificationTask()
 {
-    ble_error_t result = bts.updateCharacteristicValue((const uint8_t*)"hello", 5);
+    ble_error_t result = bts->updateCharacteristicValue((const uint8_t*)"hello", 5);
 
     // retry
     if (result != BLE_ERROR_NONE)
@@ -612,7 +605,7 @@ int main(void)
         // send notification outside of interrupt context
         if (sendHello)
         {
-            ble_error_t result = bts.updateCharacteristicValue((const uint8_t*)"hello", 5);
+            ble_error_t result = bts->updateCharacteristicValue((const uint8_t*)"hello", 5);
 
             if (result == BLE_ERROR_NONE)
             {
