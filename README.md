@@ -1,5 +1,5 @@
-# BLE_Validation_Suite
-Validation Suite for BLE_API checking 
+# Description
+A validation suite to test the BLE_API functionality of devices. 
 
 # Prerequisites
 Python 2.7.x
@@ -10,9 +10,20 @@ Install mbedhtrun (to get the ability to flash the device automatically)
 
 Optionally install yotta to use the yotta build system. Or one can use their own built hex files
 
+
+# Installation
+Run
+```
+$ git clone https://github.com/jslater8/BLE_Validation_Suite.git
+```
+To verify you have cloned it correctly, run
+```
+$ python Validation_Suite.py --help
+```
+Make sure there is no errors
 # Usage
 
-Setup the config.json file.
+Setup the config.json file. Use the config.json file included as a base line.
 
 Make sure the devices connected to the host PC are in the platform.json file
 
@@ -24,7 +35,10 @@ Run in the command line
 $ python Validation_Suite.py
 ```
 
-# Config
+The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly)
+
+
+# Config file
 "test_name" should be HRM, iBeacon or Block depending on which tests you want to run
 
 "description" is the message which is printed at the beginning of the test
@@ -45,17 +59,16 @@ the binary, use the included main.cpp files from the A and B folders, AHRM and B
 
 "__" before a variable means to not include it, it is useful to add for fast switching between build systems
 
-Look to the included config.json to see an example. 
+Look to the included config.json to see an example.
 
 # Adding new tests
 
 To add a test for advertising add a test function to iBeacon_tests.py make sure the function name finishes with "Test". 
 Add a function to the A main.cpp in the source folder and add the test name and the function name to the DispatchTableEntry in the getTest function.
 
-
 to add a test for connected devices add a test function to HRM_tests.p make sure the function name finishes with "TestA" or "TestB" depending on where the test is for device A or B. Add a function to A.cpp or B.cpp depending on if the test is in testDictA or testDictB and add the test name and the function name to the DispatchTableEntry in the getTest function in the respective AHRM or BHRM main.cpp in the source folder 
 
-# Possible Improvements for the future
+# Possible improvements for the future
 
 Changing the system to use a json file for each individual test, so users can add tests without having to edit the python file.
 
