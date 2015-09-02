@@ -8,24 +8,31 @@ Install mbed-ls (to get the ability to find connected mbed supported devices and
 
 Install mbedhtrun (to get the ability to flash the device automatically)
 
+Optionally install yotta to use the yotta build system. Or one can use their own built hex files
+
 # Usage
-Generate the .hex or .bin files from the cpp files** for your specific board using whatever toolchain you prefer.
-The suggested toolchain would be the mbed online compiler
 
-Make sure the hex files and the python files are in the same directory
+Setup the config.json file. Run in the command line
 
-run $ python Validation_Suite.py -HRM
+```
+$ python Validation_Suite.py
+```
 
-or run $ python Validation_Suite.py -iBeacon
+# Config
+"test_name" should be HRM, iBeacon or Block depending on which tests you want to run
 
-to test HRM or iBeacon BLE Capibilities
+"description" is the message which is printed at the beginning of the test
 
-** A.cpp, B.cpp are used for the iBeacon tests for device A and B. 
-AHRM.cpp and BHRM.cpp are used for the HRM tests for device A and B
+"nodes" is the connected boards, "*" indicates a platform which is in both
 
-FLAGS:
-	-f used to select which files are to be flashed to device A and B e.g. Validation_Suite.py -HRM -f AHRM.cpp BHRM.cpp
-	-i interactive mode, used to select manually a test to run. e.g. Validation_Suite.py -HRM -i
+"build_system" is the system used to build the tests, "yotta" is the recommended build system. Setting "clean" to true
+will clean the build path and "build" will build the system. This is useful if you dont want to rebuild the system but 
+just flash whatever is already built. 
+Using "abs_path" allows the user to flash an already built binary from their own toolchain or the online IDE. 
+
+"skip-flash" set to true will skip the flashing stage and just run the test suite
+
+"timeout" is the timeout before the tests fail. 
 
 # Adding new tests
 
