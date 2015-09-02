@@ -99,7 +99,7 @@ def changePayloadTest(aSer,bSer):
 			outputB = bSer.readline()
 			if outputB != '':
 				print '\tMBED[B]: ' + outputB,
-			if 'Data: 123' in outputB:
+			if 'Data:' in outputB and '123' in outputB:
 				result = True
 				break
 	return result

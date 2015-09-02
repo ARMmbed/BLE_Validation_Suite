@@ -2,7 +2,7 @@
 	"test_name": "iBeacon",
 	"description": "test for advertisement APIs",
 	"nodes": {
-		"*": ["NUCLEO_F411RE"],
+		"*": ["NUCLEO_F411RE", "LPC1549"],
 		"0": [],
 		"1": []
 	},
@@ -18,5 +18,5 @@
 	},
 	"skip-flash": false,
 	"timeout": 30,
-	"interactive": false
+	"interactive": true
 }

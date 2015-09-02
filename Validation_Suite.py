@@ -2,16 +2,12 @@ import mbed_lstools
 import subprocess
 import json
 import serial
-import datetime
 import time
 import sys
 import threading
-import itertools
 import types
 import os.path
-import pprint
 from types import *
-from pprint import pprint
 import HRM_tests as HRM
 import iBeacon_tests as iBeacon
 
@@ -456,7 +452,7 @@ if __name__ == "__main__":
 
 
 	if '--help' in sys.argv or '-h' in sys.argv:
-		string = ('\n setup the config file for the test you would like to run. Read the readme for more information')
+		string = ('\nSetup the config file for the test you would like to run. Read the readme for more information')
 		print string
 		sys.exit()
 
@@ -473,12 +469,20 @@ if __name__ == "__main__":
 	checkNodes()
 
 	# detect the mbed devices connected to the system
-	aPort = getJson(0, 'serial_port')
-	bPort = getJson(1, 'serial_port')
-	aMount = getJson(0, 'mount_point')
-	bMount = getJson(1, 'mount_point')
-	aName = getJson(0, 'platform_name')
-	bName = getJson(1, 'platform_name')
+	if '-s' not in sys.argv:
+		aPort = getJson(0, 'serial_port')
+		bPort = getJson(1, 'serial_port')
+		aMount = getJson(0, 'mount_point')
+		bMount = getJson(1, 'mount_point')
+		aName = getJson(0, 'platform_name')
+		bName = getJson(1, 'platform_name')
+	else:
+		aPort = getJson(1, 'serial_port')
+		bPort = getJson(0, 'serial_port')
+		aMount = getJson(1, 'mount_point')
+		bMount = getJson(0, 'mount_point')
+		aName = getJson(1, 'platform_name')
+		bName = getJson(0, 'platform_name')
 
 	test = config['test_name']
 

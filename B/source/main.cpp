@@ -50,7 +50,11 @@ void advertisementCallback(const Gap::AdvertisementCallbackParams_t *params)
     }
 
     /* emit the last byte of the advert payload. */
-    printf("ScanResp: %u, Data: %u\r\n", params->isScanResponse, *(params->advertisingData + params->advertisingDataLen - 1));
+    printf("ScanResp: %u, Data: ", params->isScanResponse, *(params->advertisingData + params->advertisingDataLen - 1));
+    for (unsigned index = 0; index < params->advertisingDataLen; index++) {
+        printf("%u ", params->advertisingData[index]);
+    }
+    printf("\r\n");
 }
 
 void app_start(int, char*[])
