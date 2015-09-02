@@ -14,6 +14,8 @@ Optionally install yotta to use the yotta build system. Or one can use their own
 
 Setup the config.json file.
 
+Make sure the devices connected to the host PC are in the platform.json file
+
 If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block).
 
 Run in the command line
