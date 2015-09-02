@@ -12,7 +12,11 @@ Optionally install yotta to use the yotta build system. Or one can use their own
 
 # Usage
 
-Setup the config.json file. Run in the command line
+Setup the config.json file.
+
+If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block).
+
+Run in the command line
 
 ```
 $ python Validation_Suite.py
@@ -37,6 +41,10 @@ the binary, use the included main.cpp files from the A and B folders, AHRM and B
 
 "interactive" set to true will enable the interactive mode. This will allow the user to run each sub-test individually
 
+"__" before a variable means to not include it, it is useful to add for fast switching between build systems
+
+Look to the included config.json to see an example. 
+
 # Adding new tests
 
 To add a test for advertising add a test function to iBeacon_tests.py make sure the function name finishes with "Test". 
@@ -45,8 +53,10 @@ Add a function to the A main.cpp in the source folder and add the test name and 
 
 to add a test for connected devices add a test function to HRM_tests.p make sure the function name finishes with "TestA" or "TestB" depending on where the test is for device A or B. Add a function to A.cpp or B.cpp depending on if the test is in testDictA or testDictB and add the test name and the function name to the DispatchTableEntry in the getTest function in the respective AHRM or BHRM main.cpp in the source folder 
 
-# Improvements for the future
+# Possible Improvements for the future
 
 Changing the system to use a json file for each individual test, so users can add tests without having to edit the python file.
+
+Setting the target within the system and specified with the yotta object in the config.json
 
 Support for a variable number of boards connect, currently only works with 2 boards.
