@@ -498,12 +498,14 @@ if __name__ == "__main__":
    	# checks how many devices are connected. Flashes them according. 
    	# TODO: do it based on the test being run not the size of the path
 	if len(path) == 1:
+		print 'FLASHING ' + path[0] + ' TO ' + aName
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
+		print 'FLASHING ' + path[0] + ' TO ' + bName
 		flashDevice(bMount, bPort, path[0], bName, config['skip-flash'])
 	else:
-		print 'FLASHING TO ' + aName
+		print 'FLASHING ' + path[0] + ' TO ' + aName
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
-		print 'FLASHING TO ' + bName
+		print 'FLASHING ' + path[1] + ' TO ' + bName
 		flashDevice(bMount, bPort, path[1], bName, config['skip-flash'])
 
 

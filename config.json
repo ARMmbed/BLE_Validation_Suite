@@ -18,5 +18,5 @@
 	},
 	"skip-flash": false,
 	"timeout": 30,
-	"interactive": true
+	"interactive": false
 }
