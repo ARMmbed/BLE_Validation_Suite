@@ -1,5 +1,5 @@
-# BLE_Validation_Suite
-Validation Suite for BLE_API checking 
+# Description
+A validation suite to test the BLE_API functionality of devices. 
 
 # Prerequisites
 Python 2.7.x
@@ -10,6 +10,17 @@ Install mbedhtrun (to get the ability to flash the device automatically)
 
 Optionally install yotta to use the yotta build system. Or one can use their own built hex files
 
+
+# Installation
+Run
+```
+$ git clone https://github.com/jslater8/BLE_Validation_Suite.git
+```
+To verify you have cloned it correctly, run
+```
+$ python Validation_Suite.py --help
+```
+Make sure there is no errors
 # Usage
 
 Setup the config.json file. Use the config.json file included as a base line.
@@ -24,7 +35,10 @@ Run in the command line
 $ python Validation_Suite.py
 ```
 
-# Configm file
+The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly)
+
+
+# Config file
 "test_name" should be HRM, iBeacon or Block depending on which tests you want to run
 
 "description" is the message which is printed at the beginning of the test
