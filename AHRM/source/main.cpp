@@ -48,17 +48,26 @@ static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
 
 ButtonService *btnServicePtr;
 
+/**
+ * Restarts advertising  
+ */
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
     printf("Disconnected\r\n");
     ble.gap().startAdvertising(); // restart advertising
 }
 
+/**
+ * When connected prints the bluetooth MAC address of the device connected to 
+ */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
     printf("Connected to: %d:%d:%d:%d:%d:%d\n",
            params->peerAddr[0], params->peerAddr[1], params->peerAddr[2], params->peerAddr[3], params->peerAddr[4], params->peerAddr[5]);
 }
 
+/**
+ * Tests the set and get Device Name functions 
+ */
 void setDeviceNameTest()
 {
     if (ble.gap().getState().connected) {
@@ -85,6 +94,9 @@ void setDeviceNameTest()
     printf("\r\n");
 }
 
+/**
+ * Tests the set and get Apeparance functions
+ */
 void appearanceTest()
 {
     if ((ble.gap().getState().connected)) {
@@ -99,6 +111,9 @@ void appearanceTest()
     printf("%d\r\n", appearance);
 }
 
+/**
+ * Tests the get and set Preferred Connection Params functions
+ */
 void connParamTest()
 {
     if ((ble.gap().getState().connected)) {
@@ -125,11 +140,16 @@ void connParamTest()
     ble.gap().setPreferredConnectionParams(&temp);
 }
 
+/**
+ * Changes button characteristic to be detected the B device for the notification test
+ */
 void notificationTest(void) {
     btnServicePtr->updateButtonState(true);
 }
 
-
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
+ */
 funcPtr getTest(){
 
     struct DispatchTableEntry {
@@ -161,6 +181,9 @@ funcPtr getTest(){
     return NULL;
 }
 
+/**
+ * If there is a test, will get reset the buffer and run the test
+ */
 void commandInterpreter(void)
 {
     funcPtr test = getTest();
@@ -171,6 +194,9 @@ void commandInterpreter(void)
     }
 }
 
+/**
+ * handler for the serial interrupt, ignores \r and \n characters 
+ */
 void serialHandler(void)
 {
     char input = console.getc();

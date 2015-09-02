@@ -159,7 +159,7 @@ def shutdownTest(aSer, bSer):
 			outputB = bSer.readline()
 			if outputB != '':
 				print '\tMBED[B]: ' + outputB,
-			if 'Data: 6' in outputB:
+			if 'Data:' in outputB:
 				result = True
 				break
 	return result

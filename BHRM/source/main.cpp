@@ -200,6 +200,9 @@ void notificationTest()
     }
 }
 
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
+ */
 funcPtr getTest(){
 
     struct DispatchTableEntry {
@@ -234,6 +237,9 @@ funcPtr getTest(){
     return NULL;
 }
 
+/**
+ * If there is a test, will get reset the buffer and run the test
+ */
 void commandInterpreter(void)
 {
     funcPtr test = getTest();
@@ -244,6 +250,9 @@ void commandInterpreter(void)
     }
 }
 
+/**
+ * handler for the serial interrupt, ignores \r and \n characters 
+ */
 void serialHandler(void)
 {
     char input = console.getc();

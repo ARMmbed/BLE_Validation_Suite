@@ -161,6 +161,9 @@ void resetStateForNextTest(void)
     ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
 }
 
+/**
+ * Test of the ble shutdown function. Reinitialises and makes sure it  
+ */
 void shutdownTest(void)
 {
     ASSERT_NO_FAILURE(ble.shutdown());
@@ -169,6 +172,9 @@ void shutdownTest(void)
     printf("ASSERTIONS DONE\r\n");
 }
 
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
+ */
 funcPtr getTest(){
 
     struct DispatchTableEntry {
@@ -203,6 +209,7 @@ funcPtr getTest(){
         }
     };
 
+    // Checks to see if the inputted string matches an entry in the table 
     unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
     for (unsigned i = 0; i < arraySize; i++){
         if (!strcmp((const char*)buffer, table[i].command)){
@@ -213,7 +220,7 @@ funcPtr getTest(){
 }
 
 /**
- * Controls which tests are run from input from PC
+ * If there is a test, will get reset the buffer and run the test
  */
 void commandInterpreter(void)
 {
@@ -257,6 +264,9 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
+/**
+ * handler for the serial interrupt, ignores \r and \n characters 
+ */
 void serialHandler(void)
 {
     char input = console.getc();

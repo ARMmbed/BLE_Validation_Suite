@@ -20,6 +20,8 @@ with open('config.json') as json_file:
 
 TIMEOUT = config['timeout']
 
+'''! Checks the nodes in config.json to make sure they are included in the platform.json
+'''
 def checkNodes():
 	platforms = json.load(open('platform.json'))
 	A = subprocess.check_output(['mbedls', '--json'])
@@ -71,7 +73,7 @@ def flashDevice(mount,serial,file,device, flash):
 def checkInit(ser, str):
 	result = False
 	time1 = time.time()
-	while time.time() - time1 < TIMEOUT:
+	while time.time() - time1 < TIMEOUT/2:
 		output = ser.readline()
 		if 'ASSERTIONS DONE' in output:
 			result = True
@@ -124,12 +126,13 @@ def iBeaconTest(aSer, bSer):
 	# dictionary of pairs of function and function names
 	testDict = dict(zip(names, funcs))
 
+	# if not interactive, loop through running all tests
 	if not config['interactive']:
 		for i in testDict:
-			time.sleep(4)
+			time.sleep(4) 
 			print '\nRunning ' + str(i) + ' test\n'
-			flushSerials(aSer, bSer)
-			aSer.write(str(i) + '\n')
+			flushSerials(aSer, bSer) # Flushes the serials to stop one test from interferring with others
+			aSer.write(str(i) + '\n') # Writes the the serial of the device to tell which test to run
 			result = testDict[i](aSer, bSer)
 			if result is None:
 				pass
@@ -139,7 +142,7 @@ def iBeaconTest(aSer, bSer):
 			else:
 				print '\nTest failed'
 				failList = failList + [i]
-			aSer.write('1\n')
+			aSer.write('1\n') # Write when the test in finished
 	else:
 		while True:
 			time.sleep(2)
@@ -194,7 +197,6 @@ def HRMTest(aSer, bSer):
 
 	passList = []
 	failList = []
-	# bSer.write('1\n')
 
 	# list comprehensions for generating lists of functions and tests from HRM_tests.py
 	namesA = [HRM.__dict__.get(a).__name__[:-5] for a in dir(HRM) if isinstance(HRM.__dict__.get(a), types.FunctionType) and 'TestA' in HRM.__dict__.get(a).__name__]
@@ -311,6 +313,9 @@ def HRMTest(aSer, bSer):
 	for i in failList:
 			print i + ' ',
 
+
+'''! checks the block transfer service returns the correct value
+'''
 def Block(aSer, bSer):
 	print '\t Testing block transfer service'
 	time.sleep(3)
@@ -333,17 +338,21 @@ def Block(aSer, bSer):
 @param bSer the serial object for device B
 '''
 def transferAddr(aSer, bSer):
+	# Syncing the device with a write
 	aSer.write('1\n')
 
+	# Gets back the information on the if the basic assumptions fail or succeed
 	errorTest = aSer.readline()
 	if '{{success}}' not in errorTest:
 		print 'MBED[A]: ' + errorTest,
 		sys.exit()
 	
+	# get the bluetooth MAC address from device A
 	print 'Reading BLE MAC'
 	MAC = aSer.readline()
 	print 'MAC read'
 
+	# Splits up the MAC string from device A into bytes and writes it to device B
 	MAC = MAC.split(':')
 	MAC[-1] = MAC[-1][:-1]
 	print 'BLE Address of A: ',
@@ -357,6 +366,7 @@ def transferAddr(aSer, bSer):
 '''! builds the files to be flashed using yotta
 '''
 def yotta(str):
+	# Calls the yotta command line on iBeacon, HRM or Block transfer folders
 	try:
 		if config['test_name'] == 'iBeacon':
 			os.chdir('A')
@@ -393,6 +403,7 @@ def yottaGetFiles(test):
 		yotta('clean')
 	if config['build_system']['yotta']['build']:
 		yotta('build')
+
 	# get the path of the hex file to be copied
 	if test == 'iBeacon':
   		path = [os.path.join(r,name) for r, d, f in os.walk('.') for name in f if 'ble-ibeacon' in name if name.endswith("combined.hex")]
@@ -427,6 +438,9 @@ def getFiles():
 		sys.exit()
 	return path
 
+
+'''! checks the config file for all the needed objects
+'''
 def checkConfig():
 	result = True
 	configFail = []
@@ -439,6 +453,14 @@ def checkConfig():
 
 
 if __name__ == "__main__":
+
+
+	if '--help' in sys.argv or '-h' in sys.argv:
+		string = ('\n setup the config file for the test you would like to run. Read the readme for more information')
+		print string
+		sys.exit()
+
+	#Check the config file for the major needed components
 	(result, configFail) = checkConfig()
 	if not result:
 		print 'config file does not include'
@@ -447,7 +469,9 @@ if __name__ == "__main__":
 
 	print config['description'].encode()
 
+	# Checks what devices are connected to the PC with mbedls
 	checkNodes()
+
 	# detect the mbed devices connected to the system
 	aPort = getJson(0, 'serial_port')
 	bPort = getJson(1, 'serial_port')
@@ -456,16 +480,9 @@ if __name__ == "__main__":
 	aName = getJson(0, 'platform_name')
 	bName = getJson(1, 'platform_name')
 
-
-	if '--help' in sys.argv or '-h' in sys.argv:
-		string = ('\nUse (-y) [-mbedos] to specific to build with yotta and if it should be bult for mbedos or mbed classic (mbed classic by default) |\n'
-			'Use (-f) (file1) (file2) to specify flashing with your own built binaries \n'
-			'(-HRM|-iBeacon) depending on what test you want to build'
-			'[i] for interactive mode where you can choose the test')
-		print string
-		sys.exit()
-
 	test = config['test_name']
+
+	# gets the binaries with yotta or the absolute path
 	if 'yotta' in config['build_system']:
 		path = yottaGetFiles(test)
 	elif 'abs_path' in config['build_system']:
@@ -473,25 +490,27 @@ if __name__ == "__main__":
 	else:
 		print 'need yotta or abs_path in build_system in config'
 		sys.exit()
-   	print path
 
-   	#
+   	# checks how many devices are connected. Flashes them according. 
+   	# TODO: do it based on the test being run not the size of the path
 	if len(path) == 1:
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
 		flashDevice(bMount, bPort, path[0], bName, config['skip-flash'])
 	else:
+		print 'FLASHING TO ' + aName
 		flashDevice(aMount, aPort, path[0], aName, config['skip-flash'])
+		print 'FLASHING TO ' + bName
 		flashDevice(bMount, bPort, path[1], bName, config['skip-flash'])
 
 
-	#Opens ports for logging 
+	# Opens ports for outputing to users
 	print 'Opening serial ports from devices to PC\n'
 	port = int(aPort[3:])-1
 	aSer = serial.Serial(port, timeout = 5)
 	port = int(bPort[3:])-1
 	bSer = serial.Serial(port, timeout = 5)
 
-
+	# Runs the test indicated in the config file
 	if test == 'iBeacon':
 		transferAddr(aSer, bSer)
 		iBeaconTest(aSer, bSer)

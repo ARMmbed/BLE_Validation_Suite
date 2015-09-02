@@ -7,15 +7,12 @@
 		"1": []
 	},
 	"build_system": {
-		"mbedls": true,
 		"__yotta": {
-			"set_target": false,
-			"target": ["mkit-gcc", "mkit-gcc"],
-			"clean": false,
+			"clean": true,
 			"build": true
 		},
 		"abs_path": [
-			"ble-ibeacon-a-combined.hex",
+			"A_NUC_NUCLEO_F401RE.bin",
 			"ble-ibeacon-b-combined.hex"
 		]
 	},
