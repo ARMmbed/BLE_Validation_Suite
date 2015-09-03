@@ -55,7 +55,7 @@ BLE ble;
 
 RawSerial console(USBTX, USBRX);
 uint8_t consoleInputBuffer[32];
-uint8_t bufferIndex = 0;
+uint8_t consoleBufferIndex = 0;
 
 void resetStateForNextTest(void);
 
@@ -247,7 +247,7 @@ void commandInterpreter(void)
 {
     CommandHandler_t test = getTest();
     if (test){
-        bufferIndex = 0;
+        consoleBufferIndex = 0;
         memset(consoleInputBuffer, 0, strlen((char*)consoleInputBuffer));
         test();
     }
@@ -292,7 +292,7 @@ void serialHandler(void)
 {
     char input = console.getc();
     if (input != '\n' && input != '\r'){
-        consoleInputBuffer[bufferIndex++] = input;
+        consoleInputBuffer[consoleBufferIndex++] = input;
     }
     commandInterpreter();
 }
