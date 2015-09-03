@@ -62,7 +62,20 @@ RawSerial console(USBTX, USBRX);
 uint8_t consoleInputBuffer[32];
 uint8_t consoleBufferIndex = 0;
 
-void resetStateForNextTest(void);
+/**
+ * Reset function run after every test.
+ */
+void resetStateForNextTest(void)
+{
+    ble.gap().stopAdvertising();
+    ble.gap().clearAdvertisingPayload();
+    ble.gap().clearScanResponse();
+    ble.gap().setAdvertisingTimeout(0);
+    ble.gap().setAdvertisingInterval(1000);
+
+    const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
+    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
+}
 
 /**
  * Test for advertising using an iBeacon
@@ -173,21 +186,6 @@ void setTimeoutTest(void)
     ble.gap().setAdvertisingTimeout(5); /* 5 seconds */
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
-}
-
-/**
-* Reset function run after every test
-*/
-void resetStateForNextTest(void)
-{
-    ble.gap().stopAdvertising();
-    ble.gap().clearAdvertisingPayload();
-    ble.gap().clearScanResponse();
-    ble.gap().setAdvertisingTimeout(0);
-    ble.gap().setAdvertisingInterval(1000);
-
-    const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
 }
 
 /**
