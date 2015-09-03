@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
+ /*
+ * This test-group presents a command interpreter over the serial console to
+ * allow various sub-tests to be executed. It is meant to be driven by a script,
+ * but a user can also directly interact with it. It relies upon a useful
+ * implementation for RawSerial on the host platform; more specifically, it
+ * assumes that it is possible to attach handlers for input characters.
+ */
+
 #include "mbed.h"
 #include "ble/BLE.h"
 #include "ble/services/HeartRateService.h"
@@ -21,35 +29,110 @@
 #include "LEDService.h"
 #include "ButtonService.h"
 
-#define ASSERT_NO_FAILURE(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return; \
-                    } \
-                    }while (0)
+/**
+ * Assertion and check macros
+ */
 
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
+/**
+ * Execute a command (from BLE_API) and report failure. Note that there is a
+ * premature return in the case of a failure.
+ *
+ * @param[in] CMD
+ *                The command (function-call) to be invoked.
+ */
+#define ASSERT_NO_FAILURE(CMD) do {                                                      \
+    ble_error_t error = (CMD);                                                           \
+    if (error == BLE_ERROR_NONE) {                                                       \
+        printf("{{success}}\r\n");                                                       \
+    } else {                                                                             \
+        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+        return;                                                                          \
+    }                                                                                    \
+} while (0)
 
-BLE                   ble;
-Gap::Address_t        address;
+#define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
 
-typedef void (*funcPtr)();
+/**
+ * Declarations.
+ */
+typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
+
+/**
+ * Global static objects.
+ */
+BLE ble;
+ButtonService *btnServicePtr;
+
+Gap::Address_t address;
+
 RawSerial console(USBTX, USBRX);
-uint8_t *buffer;
-uint8_t bufferIndex = 0;
+static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
+uint8_t *consoleInputBuffer;
+size_t   consolebufferIndex = 0;
 
-const static char     DEVICE_NAME[] = "HRMTEST";
+static const char     DEVICE_NAME[] = "HRMTEST";
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
                                        GattService::UUID_DEVICE_INFORMATION_SERVICE,
                                        LEDService::LED_SERVICE_UUID};
 
-ButtonService *btnServicePtr;
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const static DispatchTableEntry table[] = {
+        {"setDeviceName", setDeviceNameTest},
+        {"appearance",    appearanceTest},
+        {"connParam",     connParamTest},
+        {"notification",  notificationTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
 
 /**
- * Restarts advertising  
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
+}
+
+/**
+ * Restarts advertising
  */
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
@@ -58,7 +141,7 @@ void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reas
 }
 
 /**
- * When connected prints the bluetooth MAC address of the device connected to 
+ * When connected prints the bluetooth MAC address of the device connected to
  */
 void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
     printf("Connected to: %d:%d:%d:%d:%d:%d\n",
@@ -66,7 +149,7 @@ void connectionCallback(const Gap::ConnectionCallbackParams_t *params){
 }
 
 /**
- * Tests the set and get Device Name functions 
+ * Tests the set and get Device Name functions
  */
 void setDeviceNameTest()
 {
@@ -75,15 +158,17 @@ void setDeviceNameTest()
         return;
     }
 
-    uint8_t  deviceNameIn[] = "Josh-test";
+    uint8_t deviceNameIn[] = "Josh-test";
     ASSERT_NO_FAILURE(ble.gap().setDeviceName(deviceNameIn));
-    wait(0.5);
+    wait(0.5);  /* TODO: remove this. */
 
-    const size_t MAX_DEVICE_NAME_LEN = 50;
+    static const size_t MAX_DEVICE_NAME_LEN = 50;
     uint8_t  deviceName[MAX_DEVICE_NAME_LEN];
-    unsigned length = MAX_DEVICE_NAME_LEN;
+    size_t length;
     ASSERT_NO_FAILURE(ble.gap().getDeviceName(deviceName, &length));
+
     printf("ASSERTIONS DONE\r\n");
+
     for (unsigned i = 0; i < length; i++) {
         printf("%c", deviceName[i]);
     }
@@ -104,10 +189,11 @@ void appearanceTest()
         return;
     }
 
-    GapAdvertisingData::Appearance appearance;
     ASSERT_NO_FAILURE(ble.gap().setAppearance(GapAdvertisingData::GENERIC_PHONE));
+    GapAdvertisingData::Appearance appearance;
     ASSERT_NO_FAILURE(ble.gap().getAppearance(&appearance));
     printf("ASSERTIONS DONE\r\n");
+
     printf("%d\r\n", appearance);
 }
 
@@ -121,15 +207,15 @@ void connParamTest()
         return;
     }
 
+    Gap::ConnectionParams_t originalParams;
+    ASSERT_NO_FAILURE(ble.gap().getPreferredConnectionParams(&originalParams));
+
     Gap::ConnectionParams_t params;
     Gap::ConnectionParams_t paramsOut = {50, 500, 0, 500};
-    Gap::ConnectionParams_t temp;
-
-    ASSERT_NO_FAILURE(ble.gap().getPreferredConnectionParams(&temp));
     ASSERT_NO_FAILURE(ble.gap().setPreferredConnectionParams(&paramsOut));
-    
+
     printf("ASSERTIONS DONE\r\n");
-    
+
     ble.gap().getPreferredConnectionParams(&params);
 
     printf("%d\n", params.minConnectionInterval);
@@ -137,7 +223,7 @@ void connParamTest()
     printf("%d\n", params.slaveLatency);
     printf("%d\n", params.connectionSupervisionTimeout);
 
-    ble.gap().setPreferredConnectionParams(&temp);
+    ble.gap().setPreferredConnectionParams(&originalParams);
 }
 
 /**
@@ -146,84 +232,6 @@ void connParamTest()
 void notificationTest(void) {
     btnServicePtr->updateButtonState(true);
 }
-
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
- */
-funcPtr getTest(){
-
-    struct DispatchTableEntry {
-        const char * command;
-        void (* handler)(void);
-    };
-
-    const DispatchTableEntry table[] = {
-        {
-            "setDeviceName", setDeviceNameTest
-        },
-        {
-            "appearance", appearanceTest
-        },
-        {
-            "connParam", connParamTest
-        },
-        {
-            "notification", notificationTest
-        }
-    };
-
-    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (unsigned i = 0; i < arraySize; i++){
-        if (!strcmp((const char*)buffer, table[i].command)){
-            return table[i].handler;
-        }
-    }
-    return NULL;
-}
-
-/**
- * If there is a test, will get reset the buffer and run the test
- */
-void commandInterpreter(void)
-{
-    funcPtr test = getTest();
-    if (test){
-        bufferIndex = 0;
-        memset(buffer, 0, strlen((char*)buffer));
-        test();
-    }
-}
-
-/**
- * handler for the serial interrupt, ignores \r and \n characters 
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if (input != '\n' && input != '\r'){
-        buffer[bufferIndex++] = input;
-    }
-    commandInterpreter();
-}
-
-// void commandInterpreter(void)
-// {
-//     const static size_t MAX_SIZEOF_COMMAND = 50;
-//     while (true) {
-//         char command[MAX_SIZEOF_COMMAND];
-//         scanf("%s", command);
-
-//         if (!strcmp(command, "setDeviceName")) {
-//             testDeviceName();
-//         } else if (!strcmp(command, "appearance")) {
-//             testAppearance();
-//         } else if (!strcmp(command, "connParam")) {
-//             connParams();
-//         } else if (!strcmp(command, "notification")) {
-//             notificationTest();
-//         }
-//     }
-// }
 
 /**
  * @return 0 if basic assumptions are validated. Non-zero returns are used to
@@ -253,7 +261,7 @@ unsigned verifyBasicAssumptions()
     if (ble.gap().startAdvertising()) {
         return 1;
     }
-    
+
     const char *version = ble.getVersion();
     printf("%s\r\n", version);
     if (!strcmp(version, "")) return 1;
@@ -262,9 +270,6 @@ unsigned verifyBasicAssumptions()
 
 void app_start(int, char*[])
 {
-    buffer = (uint8_t*)malloc(24);
-    memset(buffer, 0, 24);
-
     unsigned errorCode = ble.init();
     if (errorCode == 0) {
         uint8_t                   hrmCounter = 100; // init HRM to 100bps
@@ -272,8 +277,8 @@ void app_start(int, char*[])
 
         bool                      initialValueForLEDCharacteristic = false;
         LEDService               *ledService                       = new LEDService(ble, initialValueForLEDCharacteristic);
-        
-        btnServicePtr = new ButtonService(ble, false); 
+
+        btnServicePtr = new ButtonService(ble, false);
     }
     errorCode |= verifyBasicAssumptions();
 
@@ -297,17 +302,19 @@ void app_start(int, char*[])
     /* write out the MAC address to allow the second level python script to target this device. */
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]);
 
-    console.attach(serialHandler);
+    consoleInputBuffer = (uint8_t*)malloc(SIZEOF_CONSOLE_INPUT_BUFFER);
+    memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
 
-    commandInterpreter();
+    console.attach(serialHandler);
 }
 
-#if !defined(YOTTA_MINAR_VERSION_STRING)
-
+/**
+ * main() is needed only for mbed-classic. mbed OS triggers app_start() automatically.
+ */
+#ifndef YOTTA_CFG_MBED_OS
 int main(void)
 {
     app_start(0, NULL);
     return 0;
 }
-
 #endif
