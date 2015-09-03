@@ -42,8 +42,8 @@
         return;                                                                          \
     }                                                                                    \
 } while (0)
-                 
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
+
+#define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
 
 BLE ble;
 
