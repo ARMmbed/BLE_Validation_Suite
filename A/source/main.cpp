@@ -25,6 +25,9 @@
 #include "mbed.h"
 #include "ble/services/iBeacon.h"
 
+/**
+ * Assertion and check macros
+ */
 
 /**
  * Execute a command (from BLE_API) and report failure. Note that there is a
@@ -45,11 +48,13 @@
 
 #define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
 
+/**
+ * Declarations.
+ */
 typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
 
-
 /**
- * global static objects
+ * Global static objects.
  */
 BLE ble;
 
@@ -60,8 +65,8 @@ uint8_t consoleBufferIndex = 0;
 void resetStateForNextTest(void);
 
 /**
-* Test for advertising using an iBeacon
-*/
+ * Test for advertising using an iBeacon
+ */
 void setupIBeaconTest(void)
 {
     /* setup the ibeacon */
@@ -82,28 +87,32 @@ void setupIBeaconTest(void)
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
 }
+
 /**
-* Test for setting and getting MAC address
-*/
+ * Test for setting and getting MAC address
+ */
 void setAddrTest(void)
 {
     Gap::AddressType_t addressType;
-    Gap::Address_t origAddress;
+    Gap::Address_t     origAddress;
     ble.gap().getAddress(&addressType, origAddress);
 
     const static Gap::Address_t newAddress = {110, 100, 100, 100, 100, 100}; /* A randomly chosen address for assigning to the peripheral. */
     ASSERT_NO_FAILURE(ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, newAddress));
+
     Gap::Address_t fetchedAddress;
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, fetchedAddress));
+
     printf("ASSERTIONS DONE\r\n");
     printf("%d:%d:%d:%d:%d:%d\n", newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5]);
     printf("%d:%d:%d:%d:%d:%d\n", fetchedAddress[0], fetchedAddress[1], fetchedAddress[2], fetchedAddress[3], fetchedAddress[4], fetchedAddress[5]);
 
     ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, origAddress);
 }
+
 /**
-* Test to change advertisement interval
-*/
+ * Test to change advertisement interval
+ */
 void changeIntervalTest(void)
 {
     ble.gap().setAdvertisingTimeout(0);
@@ -113,11 +122,10 @@ void changeIntervalTest(void)
 }
 
 /**
-* Test to change advertisement payload
-*/
+ * Test to change advertisement payload
+ */
 void changePayloadTest(void)
 {
-
     ble.gap().clearAdvertisingPayload();
     ble.gap().setAdvertisingTimeout(0);
 
@@ -134,8 +142,8 @@ void changePayloadTest(void)
 }
 
 /**
-* Test to change add a scan response
-*/
+ * Test to change add a scan response
+ */
 void responseTest(void)
 {
     ble.gap().clearAdvertisingPayload();
@@ -155,8 +163,8 @@ void responseTest(void)
 }
 
 /**
-* Test to change advertisement timeout.
-*/
+ * Test to change advertisement timeout.
+ */
 void setTimeoutTest(void)
 {
     ble.gap().clearAdvertisingPayload();
@@ -324,11 +332,9 @@ void app_start(int, char*[])
 }
 
 #if !defined(YOTTA_MINAR_VERSION_STRING)
-
 int main(void)
 {
     app_start(0, NULL);
     return 0;
 }
-
 #endif
