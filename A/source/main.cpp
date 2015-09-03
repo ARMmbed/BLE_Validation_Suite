@@ -45,9 +45,12 @@
 
 #define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
 
+typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
+
+
+
 BLE ble;
 
-typedef void (*funcPtr)();
 RawSerial console(USBTX, USBRX);
 uint8_t buffer[32];
 uint8_t bufferIndex = 0;
@@ -191,7 +194,7 @@ void shutdownTest(void)
 /**
  * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
  */
-funcPtr getTest(){
+CommandHandler_t getTest(){
 
     struct DispatchTableEntry {
         const char * command;
@@ -240,7 +243,7 @@ funcPtr getTest(){
  */
 void commandInterpreter(void)
 {
-    funcPtr test = getTest();
+    CommandHandler_t test = getTest();
     if (test){
         bufferIndex = 0;
         memset(buffer, 0, strlen((char*)buffer));
