@@ -52,7 +52,7 @@ typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user com
 BLE ble;
 
 RawSerial console(USBTX, USBRX);
-uint8_t buffer[32];
+uint8_t consoleInputBuffer[32];
 uint8_t bufferIndex = 0;
 
 void resetStateForNextTest(void);
@@ -231,7 +231,7 @@ CommandHandler_t getTest(){
     // Checks to see if the inputted string matches an entry in the table
     unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
     for (unsigned i = 0; i < arraySize; i++){
-        if (!strcmp((const char*)buffer, table[i].command)){
+        if (!strcmp((const char*)consoleInputBuffer, table[i].command)){
             return table[i].handler;
         }
     }
@@ -239,14 +239,14 @@ CommandHandler_t getTest(){
 }
 
 /**
- * If there is a test, will get reset the buffer and run the test
+ * If there is a test, will get reset the consoleInputBuffer and run the test
  */
 void commandInterpreter(void)
 {
     CommandHandler_t test = getTest();
     if (test){
         bufferIndex = 0;
-        memset(buffer, 0, strlen((char*)buffer));
+        memset(consoleInputBuffer, 0, strlen((char*)consoleInputBuffer));
         test();
     }
 }
@@ -284,13 +284,13 @@ unsigned verifyBasicAssumptions()
 }
 
 /**
- * handler for the serial interrupt, ignores \r and \n characters 
+ * handler for the serial interrupt, ignores \r and \n characters
  */
 void serialHandler(void)
 {
     char input = console.getc();
     if (input != '\n' && input != '\r'){
-        buffer[bufferIndex++] = input;
+        consoleInputBuffer[bufferIndex++] = input;
     }
     commandInterpreter();
 }
