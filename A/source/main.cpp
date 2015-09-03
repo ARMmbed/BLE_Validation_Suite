@@ -14,9 +14,25 @@
  * limitations under the License.
  */
 
+ /*
+ * This test-group presents a command interpreter over the serial console to
+ * allow various sub-tests to be executed. It is meant to be driven by a script,
+ * but a user can also directly interact with it. It relies upon a useful
+ * implementation for RawSerial on the host platform; more specifically, it
+ * assumes that it is possible to attach handlers for input characters.
+ */
+
 #include "mbed.h"
 #include "ble/services/iBeacon.h"
 
+
+/**
+ * Execute a command (from BLE_API) and report failure. Note that there is a
+ * premature return in the case of a failure.
+ *
+ * @param[in] CMD
+ *                The command (function-call) to be invoked.
+ */
 #define ASSERT_NO_FAILURE(CMD) do { \
                     ble_error_t error = (CMD); \
                     if (error == BLE_ERROR_NONE){ \
