@@ -1,6 +1,11 @@
 # Description
 A validation suite to test the BLE_API functionality of devices. 
 
+The tests work by using using mbedls to detect devices, then mbedhtrun is used to flash devices with binaries. It uses a
+config file to specify options in the test. 
+
+The device will run a basic initialisation test to make sure that it has the ability to run the rest of the tests. Then there is a python function for each test which collects the output from the devices and verifies to make sure that it is correct.
+
 # Prerequisites
 Python 2.7.x
 
@@ -29,13 +34,15 @@ Make sure the devices connected to the host PC are in the platform.json file
 
 If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block).
 
+If you do not have a yotta target you can test using self built binaries from the online IDE. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
+
 Run in the command line
 
 ```
 $ python Validation_Suite.py
 ```
 
-The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly)
+The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly). 
 
 
 # Config file
