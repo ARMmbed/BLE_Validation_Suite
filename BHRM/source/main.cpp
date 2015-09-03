@@ -14,46 +14,123 @@
  * limitations under the License.
  */
 
+ /*
+ * This test-group presents a command interpreter over the serial console to
+ * allow various sub-tests to be executed. It is meant to be driven by a script,
+ * but a user can also directly interact with it. It relies upon a useful
+ * implementation for RawSerial on the host platform; more specifically, it
+ * assumes that it is possible to attach handlers for input characters.
+ */
+
 #include "mbed.h"
 #include "ble/BLE.h"
 #include "ble/DiscoveredCharacteristic.h"
 #include "ble/DiscoveredService.h"
 
-#define ASSERT_NO_FAILURE(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return; \
-                    } \
-                    }while (0)
-#define ASSERT_NO_FAILURE_INT(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return 1; \
-                    } \
-                    }while (0)              
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
+/**
+ * Assertion and check macros
+ */
 
-BLE                      ble;
-Gap::Address_t           address;
+/**
+ * Execute a command (from BLE_API) and report failure. Note that there is a
+ * premature return in the case of a failure.
+ *
+ * @param[in] CMD
+ *                The command (function-call) to be invoked.
+ */
+#define ASSERT_NO_FAILURE(CMD) do {                                                      \
+    ble_error_t error = (CMD);                                                           \
+    if (error == BLE_ERROR_NONE) {                                                       \
+        printf("{{success}}\r\n");                                                       \
+    } else {                                                                             \
+        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+        return;                                                                          \
+    }                                                                                    \
+} while (0)
 
-typedef void (*funcPtr)();
+#define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
+
+/**
+ * Declarations.
+ */
+typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
+
+/**
+ * Global static objects.
+ */
+BLE ble;
+Gap::Address_t address;
+
 RawSerial console(USBTX, USBRX);
-uint8_t *buffer;
-uint8_t bufferIndex = 0;
+static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
+uint8_t consoleInputBuffer[SIZEOF_CONSOLE_INPUT_BUFFER];
+size_t  consoleBufferIndex = 0;
 
 DiscoveredCharacteristic* HRMCharacteristic;
 DiscoveredCharacteristic* LEDCharacteristic;
 DiscoveredCharacteristic* BTNCharacteristic;
-bool                     HRMFound =          false;
-bool                     LEDFound =          false;
-bool                     BTNFound =          false;
-Gap::Handle_t            deviceAHandle;
+bool HRMFound = false;
+bool LEDFound = false;
+bool BTNFound = false;
+
+Gap::Handle_t deviceAHandle;
+
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const DispatchTableEntry table[] = {
+        {"connect",      connectTest},
+        {"disconnect",   disconnectTest},
+        {"read",         readTest},
+        {"write",        writeTest},
+        {"notification", notificationTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
+}
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
@@ -92,7 +169,7 @@ void characteristicDiscoveryCallback(const DiscoveredCharacteristic *characteris
     }
     if (characteristicP->getUUID().getShortUUID() == 0xA003) {
         BTNCharacteristic = new DiscoveredCharacteristic(*characteristicP);
-        BTNFound          = true;    
+        BTNFound          = true;
     }
 }
 
@@ -121,7 +198,7 @@ void readCharacteristic(const GattReadCallbackParams *response)
         printf("LED: %d\n", response->data[0]);
     }
     if (response->handle == BTNCharacteristic->getValueHandle()) {
-        printf("BTN: %d\n", response->data[0]);    
+        printf("BTN: %d\n", response->data[0]);
     }
 }
 
@@ -193,96 +270,12 @@ void notificationTest()
         ASSERT_NO_FAILURE(ble.gattClient().write(GattClient::GATT_OP_WRITE_REQ,
                                    deviceAHandle,
                                    BTNCharacteristic->getValueHandle() + 1, /* HACK Alert. We're assuming that CCCD descriptor immediately follows the value attribute. */
-                                   sizeof(uint16_t),                          /* HACK Alert! size should be made into a BLE_API constant. */
-                                   reinterpret_cast<const uint8_t *>(&value)));    
+                                   sizeof(uint16_t),                        /* HACK Alert! size should be made into a BLE_API constant. */
+                                   reinterpret_cast<const uint8_t *>(&value)));
     } else {
-        printf("Characteristic not found\r\r");    
+        printf("Characteristic not found\r\r");
     }
 }
-
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
- */
-funcPtr getTest(){
-
-    struct DispatchTableEntry {
-        const char * command;
-        void (* handler)(void);
-    };
-
-    const DispatchTableEntry table[] = {
-        {
-            "connect", connectTest
-        },
-        {
-            "disconnect", disconnectTest
-        },
-        {
-            "read", readTest
-        },
-        {
-            "write", writeTest
-        },
-        {
-            "notification", notificationTest
-        }
-    };
-
-    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (unsigned i = 0; i < arraySize; i++){
-        if (!strcmp((const char*)buffer, table[i].command)){
-            return table[i].handler;
-        }
-    }
-    return NULL;
-}
-
-/**
- * If there is a test, will get reset the buffer and run the test
- */
-void commandInterpreter(void)
-{
-    funcPtr test = getTest();
-    if (test){
-        bufferIndex = 0;
-        memset(buffer, 0, strlen((char*)buffer));
-        test();
-    }
-}
-
-/**
- * handler for the serial interrupt, ignores \r and \n characters 
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if (input != '\n' && input != '\r'){
-        buffer[bufferIndex++] = input;
-    }
-    commandInterpreter();
-}
-
-/**
- * Controls which tests are run from input from PC
- */
-// void commandInterpreter()
-// {
-//     char command[50];
-//     while (true) {
-//         scanf("%s", command); /* Takes a string from the host test and decides what test to use. */
-//         if (!strcmp(command, "connect")) {
-//             connectTest();
-//         } else if (!strcmp(command, "disconnect")) {
-//             disconnectTest();
-//         } else if (!strcmp(command, "read")) {
-//             readTest();
-//         } else if (!strcmp(command, "write")) {
-//             writeTest();
-//         } else if (!strcmp(command, "notification")) {
-//             notificationTest();
-//         }
-//     }
-// }
 
 /**
  * Call back for writing to LED characteristic.
@@ -290,9 +283,9 @@ void serialHandler(void)
 void writeCallback(const GattWriteCallbackParams *params)
 {
     if (params->handle == LEDCharacteristic->getValueHandle()) {
-        ASSERT_NO_FAILURE(LEDCharacteristic->read());   
+        ASSERT_NO_FAILURE(LEDCharacteristic->read());
     } else if (params->handle == BTNCharacteristic->getValueHandle() + 1) {
-        printf("Sync\r\n");   
+        printf("Sync\r\n");
     }
 }
 
@@ -306,8 +299,6 @@ void hvxCallback(const GattHVXCallbackParams *params) {
 
 void app_start(int, char*[])
 {
-    buffer = (uint8_t*)malloc(24);
-    memset(buffer, 0, 24);
     printf("{{end}}\n"); /* Hands control over to Python script */
 
     unsigned x;
@@ -319,23 +310,26 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().setScanParams(500 /* scan interval */, 200 /* scan window */));
     printf("ASSERTIONS DONE\r\n");
+
     ble.gap().onConnection(connectionCallback);
     ble.gap().onDisconnection(disconnectionCallback);
     ble.gattClient().onDataRead(readCharacteristic);
     ble.gattClient().onDataWrite(writeCallback);
     ble.gattClient().onHVX(hvxCallback);
 
-    console.attach(serialHandler);
+    consoleInputBuffer = (uint8_t*)malloc(SIZEOF_CONSOLE_INPUT_BUFFER);
+    memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
 
-    commandInterpreter();
+    console.attach(serialHandler);
 }
 
-#if !defined(YOTTA_MINAR_VERSION_STRING)
-
+/**
+ * main() is needed only for mbed-classic. mbed OS triggers app_start() automatically.
+ */
+#ifndef YOTTA_CFG_MBED_OS
 int main(void)
 {
     app_start(0, NULL);
     return 0;
 }
-
 #endif
