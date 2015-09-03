@@ -1,5 +1,5 @@
 /* mbed Microcontroller Library
- * Copyright (c) 2006-2013 ARM Limited
+ * Copyright (c) 2006-2015 ARM Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
  */
 
 #include "mbed.h"
+#include "ble/BLE.h"
 #include "ble/services/iBeacon.h"
 
 /**
@@ -59,8 +60,69 @@ typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user com
 BLE ble;
 
 RawSerial console(USBTX, USBRX);
-uint8_t consoleInputBuffer[32];
-uint8_t consoleBufferIndex = 0;
+static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
+uint8_t consoleInputBuffer[SIZEOF_CONSOLE_INPUT_BUFFER];
+size_t  consoleBufferIndex = 0;
+
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const static DispatchTableEntry table[] = {
+        {"1",              resetStateForNextTest},
+        {"setAddr",        setAddrTest},
+        {"changeInterval", changeIntervalTest},
+        {"changePayload",  changePayloadTest},
+        {"setTimeout",     setTimeoutTest},
+        {"response",       responseTest},
+        {"shutdown",       shutdownTest},
+        {"detect",         setupIBeaconTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
+}
 
 /**
  * Reset function run after every test.
@@ -82,7 +144,7 @@ void resetStateForNextTest(void)
  */
 void setupIBeaconTest(void)
 {
-    /* setup the ibeacon */
+    /* setup the iBeacon */
     const static uint8_t uuid[] = {0xE2, 0x0A, 0x39, 0xF4, 0x73, 0xF5, 0x4B, 0xC4,
                                    0xA1, 0x2F, 0x17, 0xD1, 0xAD, 0x07, 0xA9, 0x61};
     uint16_t majorNumber = 1122;
@@ -189,7 +251,7 @@ void setTimeoutTest(void)
 }
 
 /**
- * Test of the ble shutdown function. Reinitialises and makes sure it
+ * Test of the ble shutdown function. Reinitializes and makes sure it
  */
 void shutdownTest(void)
 {
@@ -197,66 +259,6 @@ void shutdownTest(void)
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
-}
-
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
- */
-CommandHandler_t getTest(){
-
-    struct DispatchTableEntry {
-        const char * command;
-        void (* handler)(void);
-    };
-
-    const DispatchTableEntry table[] = {
-        {
-            "1", resetStateForNextTest
-        },
-        {
-            "setAddr", setAddrTest
-        },
-        {
-            "changeInterval", changeIntervalTest
-        },
-        {
-            "changePayload", changePayloadTest
-        },
-        {
-            "setTimeout", setTimeoutTest
-        },
-        {
-            "response", responseTest
-        },
-        {
-            "shutdown", shutdownTest
-        },
-        {
-            "detect", setupIBeaconTest
-        }
-    };
-
-    // Checks to see if the inputted string matches an entry in the table
-    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (unsigned i = 0; i < arraySize; i++){
-        if (!strcmp((const char*)consoleInputBuffer, table[i].command)){
-            return table[i].handler;
-        }
-    }
-    return NULL;
-}
-
-/**
- * If there is a test, will get reset the consoleInputBuffer and run the test
- */
-void commandInterpreter(void)
-{
-    CommandHandler_t test = getTest();
-    if (test){
-        consoleBufferIndex = 0;
-        memset(consoleInputBuffer, 0, strlen((char*)consoleInputBuffer));
-        test();
-    }
 }
 
 /**
@@ -291,18 +293,6 @@ unsigned verifyBasicAssumptions()
     return 0;
 }
 
-/**
- * handler for the serial interrupt, ignores \r and \n characters
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if (input != '\n' && input != '\r'){
-        consoleInputBuffer[consoleBufferIndex++] = input;
-    }
-    commandInterpreter();
-}
-
 void app_start(int, char*[])
 {
     unsigned errorCode = verifyBasicAssumptions();
@@ -324,12 +314,14 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]); /* sends the MAC address to the host PC. */
 
+    /* Setup console input handler to allow command interpretation. */
     console.attach(serialHandler);
-
-    commandInterpreter();
 }
 
-#if !defined(YOTTA_MINAR_VERSION_STRING)
+/**
+ * main() is needed only for mbed-classic. mbed OS triggers app_start() automatically.
+ */
+#ifndef YOTTA_CFG_MBED_OS
 int main(void)
 {
     app_start(0, NULL);
