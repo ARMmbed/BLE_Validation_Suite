@@ -32,7 +32,16 @@ Setup the config.json file. Use the config.json file included as a base line.
 
 Make sure the devices connected to the host PC are in the platform.json file
 
-If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block).
+If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block). 
+
+```
+$ cd A
+$ yotta target nrf51dk-gcc
+$ cd ..
+$ cd B 
+$ yotta target nrf51dk-gcc
+$ cd ..
+```
 
 If you do not have a yotta target you can test using self built binaries from the online IDE make sure the binaries are in the same directory as the Validation_Suite.py file. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
 
