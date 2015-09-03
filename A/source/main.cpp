@@ -33,15 +33,15 @@
  * @param[in] CMD
  *                The command (function-call) to be invoked.
  */
-#define ASSERT_NO_FAILURE(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return; \
-                    } \
-                    }while (0)
+#define ASSERT_NO_FAILURE(CMD) do {                                                      \
+    ble_error_t error = (CMD);                                                           \
+    if (error == BLE_ERROR_NONE) {                                                       \
+        printf("{{success}}\r\n");                                                       \
+    } else {                                                                             \
+        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+        return;                                                                          \
+    }                                                                                    \
+} while (0)
                  
 #define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
 
