@@ -48,7 +48,9 @@
 typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
 
 
-
+/**
+ * global static objects
+ */
 BLE ble;
 
 RawSerial console(USBTX, USBRX);
