@@ -420,9 +420,9 @@ def getFiles():
 		print 'need abs_path in config file'
 		sys.exit()
 	try:
-		if config['test_name'] == 'Block':
-			path = [config['build_system']['abs_path']]
 		path = config['build_system']['abs_path']
+		if config['test_name'] == 'Block':
+			return path
 		if not os.path.exists(path[0]):
 			print path[0] + ' does not exist in current directory'
 			sys.exit()
@@ -469,6 +469,7 @@ if __name__ == "__main__":
 	checkNodes()
 
 	# detect the mbed devices connected to the system
+	# -s is used to swap the detected devices from mbedls in order to swap the A and B devices. Should be changed to automatically detect and swap 
 	if '-s' not in sys.argv:
 		aPort = getJson(0, 'serial_port')
 		bPort = getJson(1, 'serial_port')
