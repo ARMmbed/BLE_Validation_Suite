@@ -34,7 +34,7 @@ Make sure the devices connected to the host PC are in the platform.json file
 
 If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block).
 
-If you do not have a yotta target you can test using self built binaries from the online IDE. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
+If you do not have a yotta target you can test using self built binaries from the online IDE make sure the binaries are in the same directory as the Validation_Suite.py file. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
 
 Run in the command line
 
