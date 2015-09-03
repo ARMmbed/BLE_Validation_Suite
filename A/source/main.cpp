@@ -66,10 +66,10 @@ void setupIBeaconTest(void)
     uint16_t minorNumber = 3344;
     uint16_t txPower     = 0xC8;
     iBeacon ibeacon(ble, uuid, majorNumber, minorNumber, txPower);
-    
+
     uint16_t interval_value = 1000;
     ble.gap().setAdvertisingInterval(interval_value); /* 1000ms. */
-    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), interval_value); 
+    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), interval_value);
 
     ble.gap().setAdvertisingTimeout(0);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
@@ -178,7 +178,7 @@ void resetStateForNextTest(void)
 }
 
 /**
- * Test of the ble shutdown function. Reinitialises and makes sure it  
+ * Test of the ble shutdown function. Reinitialises and makes sure it
  */
 void shutdownTest(void)
 {
@@ -189,7 +189,7 @@ void shutdownTest(void)
 }
 
 /**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
  */
 funcPtr getTest(){
 
@@ -225,7 +225,7 @@ funcPtr getTest(){
         }
     };
 
-    // Checks to see if the inputted string matches an entry in the table 
+    // Checks to see if the inputted string matches an entry in the table
     unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
     for (unsigned i = 0; i < arraySize; i++){
         if (!strcmp((const char*)buffer, table[i].command)){
@@ -272,7 +272,7 @@ unsigned verifyBasicAssumptions()
         printf("{{failure}} ble.gap().getState() at line %u\r\n", __LINE__); /* writing out {{failure}} will halt the host test runner. */
         return 1;
     }
-    
+
     const char *version = ble.getVersion();
     printf("%s\r\n", version);
 
@@ -314,7 +314,7 @@ void app_start(int, char*[])
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]); /* sends the MAC address to the host PC. */
 
     console.attach(serialHandler);
-    
+
     commandInterpreter();
 }
 
