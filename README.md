@@ -34,6 +34,15 @@ Make sure the devices connected to the host PC are in the platform.json file
 
 If using yotta, set the targets within the test folders (i.e. A and B or AHRM and BHRM or Block). 
 
+If you do not have a yotta target you can test using self built binaries from the online IDE make sure the binaries are in the same directory as the Validation_Suite.py file. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
+
+
+The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly). 
+
+e.g. If you have two nrf51dk devices and you want to perform the iBeacon set of tests with a yotta build system, here is an example of the steps you would take assume you have installed and have the prerequisites 
+
+Plug in both nrf51dk boards
+
 ```
 $ cd A
 $ yotta target nrf51dk-gcc
@@ -43,16 +52,19 @@ $ yotta target nrf51dk-gcc
 $ cd ..
 ```
 
-If you do not have a yotta target you can test using self built binaries from the online IDE make sure the binaries are in the same directory as the Validation_Suite.py file. Copy the source cpp files included for each device and test. Look at "build_system" later on in the config section of the README.
-
-Run in the command line
-
+Setup the config file and include 
+```
+"build_system": {
+		"__yotta": {
+			"clean": true,
+			"build": true
+		},
+}
+```
+Then run
 ```
 $ python Validation_Suite.py
 ```
-
-The only flag is "-s" which swaps the way the devices detected using mbedls, this is used to flash the program if they are detected the wrong way round from the test suite (this should be fixed to check the device and flash accordingly). 
-
 
 # Config file
 "test_name" should be HRM, iBeacon or Block depending on which tests you want to run
