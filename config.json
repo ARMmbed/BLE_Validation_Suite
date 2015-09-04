@@ -1,22 +1,22 @@
 {
-	"test_name": "iBeacon",
+	"test_name": "HRM",
 	"description": "test for advertisement APIs",
 	"nodes": {
-		"*": ["NUCLEO_F411RE", "LPC1549"],
+		"*": ["NRF51DK"],
 		"0": [],
 		"1": []
 	},
 	"build_system": {
-		"__yotta": {
-			"clean": true,
+		"yotta": {
+			"clean": false,
 			"build": true
 		},
-		"abs_path": [
+		"__abs_path": [
 			"A_NUC_NUCLEO_F401RE.bin",
 			"ble-ibeacon-b-combined.hex"
 		]
 	},
 	"skip-flash": false,
-	"timeout": 30,
+	"timeout": 60,
 	"interactive": false
 }

@@ -22,9 +22,9 @@ def aSerialRead(aSer, str):
 		if output != '' and '{{success}}' not in output:
 			print str + output,
 		if 'Connected' in output:
-			return
+			return True
 		if 'Disconnected' in output:
-			return
+			return False
 
 '''! test function to monitor time between advertisements, enables certain tests to be able to run, only runnable when devices are disconnected
 @param aSer serial port of device A

@@ -230,8 +230,10 @@ def HRMTest(aSer, bSer):
 		if result is None:
 			pass
 		elif result:
+			print '\nTest passed'
 			passList = passList + ['connect']
 		else:
+			print '\nTest failed'
 			failList = failList + ['connect']
 		time.sleep(2)
 		for i in testDictB:
@@ -295,9 +297,11 @@ def HRMTest(aSer, bSer):
 			elif result:
 				if testInput in failList:
 					failList.remove(testInput)
+				print '\nTest passed'
 				passList = (list(set(passList + [testInput])))
 			else:
 				if testInput not in passList:
+					print '\nTest failed'
 					failList = (list(set(failList + [testInput])))
 
 	print 'SUCCESSFUL TESTS: {0}/{1}'.format(len(passList),len(passList + failList))

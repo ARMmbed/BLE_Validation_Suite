@@ -79,16 +79,6 @@ def changeIntervalTest(aSer,bSer):
 					result = True
 					break
 				time2 = time.time()
-				# if approxEqual(uptime,0.5,0.2):
-				# 	counter = counter + 1
-
-				# 	avg = avg + uptime
-				# print '\tPC: Time interval: ' + str(uptime)
-				# time2 = time.time()
-				# if counter == PASS_COUNTER:
-				# 	avg = avg/counter
-				# 	result = approxEqual(avg,0.5,0.05)
-				# 	break
 	return result
 
 

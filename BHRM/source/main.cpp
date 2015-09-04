@@ -63,7 +63,7 @@ Gap::Address_t address;
 
 RawSerial console(USBTX, USBRX);
 static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
-uint8_t consoleInputBuffer[SIZEOF_CONSOLE_INPUT_BUFFER];
+uint8_t *consoleInputBuffer;
 size_t  consoleBufferIndex = 0;
 
 DiscoveredCharacteristic* HRMCharacteristic;
@@ -74,63 +74,6 @@ bool LEDFound = false;
 bool BTNFound = false;
 
 Gap::Handle_t deviceAHandle;
-
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
- */
-CommandHandler_t mapInputToHandler(void)
-{
-    struct DispatchTableEntry {
-        const char       *command;
-        CommandHandler_t  handler;
-    };
-    /* list of supported tests. */
-    const DispatchTableEntry table[] = {
-        {"connect",      connectTest},
-        {"disconnect",   disconnectTest},
-        {"read",         readTest},
-        {"write",        writeTest},
-        {"notification", notificationTest}
-    };
-
-    // Checks to see if the inputted string matches an entry in the table
-    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (size_t i = 0; i < arraySize; i++) {
-        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
-            return table[i].handler;
-        }
-    }
-
-    return NULL;
-}
-
-/**
- * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
- */
-void commandInterpreter(void)
-{
-    CommandHandler_t test = mapInputToHandler();
-    if (test) {
-        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
-        consoleBufferIndex = 0;
-        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
-
-        test(); /* dispatch the test. */
-    }
-}
-
-/**
- * handler for the serial interrupt, ignores \r and \n characters
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if ((input != '\n') && (input != '\r')) {
-        consoleInputBuffer[consoleBufferIndex++] = input;
-    } else {
-        commandInterpreter();
-    }
-}
 
 void disconnectionCallback(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
@@ -295,6 +238,63 @@ void hvxCallback(const GattHVXCallbackParams *params) {
         printf("%02x", params->data[index]);
     }
     printf("\r\n");
+}
+
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const DispatchTableEntry table[] = {
+        {"connect",      connectTest},
+        {"disconnect",   disconnectTest},
+        {"read",         readTest},
+        {"write",        writeTest},
+        {"notification", notificationTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
 }
 
 void app_start(int, char*[])

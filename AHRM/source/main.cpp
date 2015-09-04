@@ -68,68 +68,13 @@ Gap::Address_t address;
 RawSerial console(USBTX, USBRX);
 static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
 uint8_t *consoleInputBuffer;
-size_t   consolebufferIndex = 0;
+size_t   consoleBufferIndex = 0;
 
 static const char     DEVICE_NAME[] = "HRMTEST";
 static const uint16_t uuid16_list[] = {GattService::UUID_HEART_RATE_SERVICE,
                                        GattService::UUID_DEVICE_INFORMATION_SERVICE,
                                        LEDService::LED_SERVICE_UUID};
 
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
- */
-CommandHandler_t mapInputToHandler(void)
-{
-    struct DispatchTableEntry {
-        const char       *command;
-        CommandHandler_t  handler;
-    };
-    /* list of supported tests. */
-    const static DispatchTableEntry table[] = {
-        {"setDeviceName", setDeviceNameTest},
-        {"appearance",    appearanceTest},
-        {"connParam",     connParamTest},
-        {"notification",  notificationTest}
-    };
-
-    // Checks to see if the inputted string matches an entry in the table
-    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (size_t i = 0; i < arraySize; i++) {
-        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
-            return table[i].handler;
-        }
-    }
-
-    return NULL;
-}
-
-/**
- * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
- */
-void commandInterpreter(void)
-{
-    CommandHandler_t test = mapInputToHandler();
-    if (test) {
-        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
-        consoleBufferIndex = 0;
-        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
-
-        test(); /* dispatch the test. */
-    }
-}
-
-/**
- * handler for the serial interrupt, ignores \r and \n characters
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if ((input != '\n') && (input != '\r')) {
-        consoleInputBuffer[consoleBufferIndex++] = input;
-    } else {
-        commandInterpreter();
-    }
-}
 
 /**
  * Restarts advertising
@@ -164,7 +109,7 @@ void setDeviceNameTest()
 
     static const size_t MAX_DEVICE_NAME_LEN = 50;
     uint8_t  deviceName[MAX_DEVICE_NAME_LEN];
-    size_t length;
+    unsigned length = MAX_DEVICE_NAME_LEN;
     ASSERT_NO_FAILURE(ble.gap().getDeviceName(deviceName, &length));
 
     printf("ASSERTIONS DONE\r\n");
@@ -231,6 +176,62 @@ void connParamTest()
  */
 void notificationTest(void) {
     btnServicePtr->updateButtonState(true);
+}
+
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const static DispatchTableEntry table[] = {
+        {"setDeviceName", setDeviceNameTest},
+        {"appearance",    appearanceTest},
+        {"connParam",     connParamTest},
+        {"notification",  notificationTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
 }
 
 /**
