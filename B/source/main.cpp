@@ -14,30 +14,37 @@
  * limitations under the License.
  */
 
+/* This is the Central side of the beacon test. */
+
 #include "mbed.h"
 #include "ble/BLE.h"
 
-#define ASSERT_NO_FAILURE(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return; \
-                    } \
-                    }while (0)
+/**
+ * Assertion and check macros
+ */
 
-#define ASSERT_NO_FAILURE_INT(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return 1; \
-                    } \
-                    }while (0)                    
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
+/**
+ * Execute a command (from BLE_API) and report failure. Note that there is a
+ * premature return in the case of a failure.
+ *
+ * @param[in] CMD
+ *                The command (function-call) to be invoked.
+ */
+#define ASSERT_NO_FAILURE(CMD) do {                                                      \
+    ble_error_t error = (CMD);                                                           \
+    if (error == BLE_ERROR_NONE) {                                                       \
+        printf("{{success}}\r\n");                                                       \
+    } else {                                                                             \
+        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+        return;                                                                          \
+    }                                                                                    \
+} while (0)
 
+#define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
+
+/**
+ * Global static objects.
+ */
 BLE ble;
 Gap::Address_t peerAddress;
 
@@ -60,6 +67,7 @@ void advertisementCallback(const Gap::AdvertisementCallbackParams_t *params)
 void app_start(int, char*[])
 {
     printf("{{success}}\r\n{{end}}\r\n"); /* to handover control from the hosttest to the python script. */
+
     /* Read in the peer address. */
     int x;
     for (unsigned i = 0; i < Gap::ADDR_LEN; i++) {
@@ -74,12 +82,13 @@ void app_start(int, char*[])
     printf("ASSERTIONS DONE\r\n");
 }
 
-#if !defined(YOTTA_MINAR_VERSION_STRING)
-
+/**
+ * main() is needed only for mbed-classic. mbed OS triggers app_start() automatically.
+ */
+#ifndef YOTTA_CFG_MBED_OS
 int main(void)
 {
     app_start(0, NULL);
     return 0;
 }
-
 #endif

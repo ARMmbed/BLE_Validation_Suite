@@ -1,5 +1,5 @@
 /* mbed Microcontroller Library
- * Copyright (c) 2006-2013 ARM Limited
+ * Copyright (c) 2006-2015 ARM Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,46 +14,147 @@
  * limitations under the License.
  */
 
+ /*
+ * This test-group presents a command interpreter over the serial console to
+ * allow various sub-tests to be executed. It is meant to be driven by a script,
+ * but a user can also directly interact with it. It relies upon a useful
+ * implementation for RawSerial on the host platform; more specifically, it
+ * assumes that it is possible to attach handlers for input characters.
+ */
+
 #include "mbed.h"
+#include "ble/BLE.h"
 #include "ble/services/iBeacon.h"
 
-#define ASSERT_NO_FAILURE(CMD) do { \
-                    ble_error_t error = (CMD); \
-                    if (error == BLE_ERROR_NONE){ \
-                        printf("{{success}}\r\n"); \
-                    } else{ \
-                        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
-                        return; \
-                    } \
-                    }while (0)
-                 
-#define CHECK_EQUALS(X,Y)    ((X)==(Y)) ? (printf("{{success}}\r\n")) : printf("{{failure}}\r\n");
-
-BLE ble;
-
-typedef void (*funcPtr)();
-RawSerial console(USBTX, USBRX);
-uint8_t buffer[32];
-uint8_t bufferIndex = 0;
-
-void resetStateForNextTest(void);
+/**
+ * Assertion and check macros
+ */
 
 /**
-* Test for advertising using an iBeacon
-*/
+ * Execute a command (from BLE_API) and report failure. Note that there is a
+ * premature return in the case of a failure.
+ *
+ * @param[in] CMD
+ *                The command (function-call) to be invoked.
+ */
+#define ASSERT_NO_FAILURE(CMD) do {                                                      \
+    ble_error_t error = (CMD);                                                           \
+    if (error == BLE_ERROR_NONE) {                                                       \
+        printf("{{success}}\r\n");                                                       \
+    } else {                                                                             \
+        printf("{{failure}} %s at line %u ERROR CODE: %u\r\n", #CMD, __LINE__, (error)); \
+        return;                                                                          \
+    }                                                                                    \
+} while (0)
+
+#define CHECK_EQUALS(X,Y) ((X) == (Y) ? printf("{{success}}\r\n") : printf("{{failure}}\r\n"));
+
+/**
+ * Declarations.
+ */
+typedef void (*CommandHandler_t)(void); /* prototype for a handler of a user command. */
+
+/**
+ * Global static objects.
+ */
+BLE ble;
+
+RawSerial console(USBTX, USBRX);
+static const size_t SIZEOF_CONSOLE_INPUT_BUFFER = 32; /* should be large enough to capture any command name. */
+uint8_t consoleInputBuffer[SIZEOF_CONSOLE_INPUT_BUFFER];
+size_t  consoleBufferIndex = 0;
+
+/**
+ * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions.
+ */
+CommandHandler_t mapInputToHandler(void)
+{
+    struct DispatchTableEntry {
+        const char       *command;
+        CommandHandler_t  handler;
+    };
+    /* list of supported tests. */
+    const static DispatchTableEntry table[] = {
+        {"1",              resetStateForNextTest},
+        {"setAddr",        setAddrTest},
+        {"changeInterval", changeIntervalTest},
+        {"changePayload",  changePayloadTest},
+        {"setTimeout",     setTimeoutTest},
+        {"response",       responseTest},
+        {"shutdown",       shutdownTest},
+        {"detect",         setupIBeaconTest}
+    };
+
+    // Checks to see if the inputted string matches an entry in the table
+    size_t arraySize = sizeof(table)/sizeof(DispatchTableEntry);
+    for (size_t i = 0; i < arraySize; i++) {
+        if (!strcmp((const char *)consoleInputBuffer, table[i].command)) {
+            return table[i].handler;
+        }
+    }
+
+    return NULL;
+}
+
+/**
+ * If there is a match test name in the consoleInputBuffer, this will run the test; otherwise return immediately.
+ */
+void commandInterpreter(void)
+{
+    CommandHandler_t test = mapInputToHandler();
+    if (test) {
+        /* If we've found a test to run, we can ignore the rest of the consoleInputBuffer. */
+        consoleBufferIndex = 0;
+        memset(consoleInputBuffer, 0, SIZEOF_CONSOLE_INPUT_BUFFER);
+
+        test(); /* dispatch the test. */
+    }
+}
+
+/**
+ * handler for the serial interrupt, ignores \r and \n characters
+ */
+void serialHandler(void)
+{
+    char input = console.getc();
+    if ((input != '\n') && (input != '\r')) {
+        consoleInputBuffer[consoleBufferIndex++] = input;
+    } else {
+        commandInterpreter();
+    }
+}
+
+/**
+ * Reset function run after every test.
+ */
+void resetStateForNextTest(void)
+{
+    ble.gap().stopAdvertising();
+    ble.gap().clearAdvertisingPayload();
+    ble.gap().clearScanResponse();
+    ble.gap().setAdvertisingTimeout(0);
+    ble.gap().setAdvertisingInterval(1000);
+
+    const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
+    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
+}
+
+/**
+ * Test for advertising using an iBeacon
+ */
 void setupIBeaconTest(void)
 {
-    /* setup the ibeacon */
+    /* setup the iBeacon */
     const static uint8_t uuid[] = {0xE2, 0x0A, 0x39, 0xF4, 0x73, 0xF5, 0x4B, 0xC4,
                                    0xA1, 0x2F, 0x17, 0xD1, 0xAD, 0x07, 0xA9, 0x61};
     uint16_t majorNumber = 1122;
     uint16_t minorNumber = 3344;
     uint16_t txPower     = 0xC8;
     iBeacon ibeacon(ble, uuid, majorNumber, minorNumber, txPower);
-    
+
     uint16_t interval_value = 1000;
     ble.gap().setAdvertisingInterval(interval_value); /* 1000ms. */
-    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), interval_value); 
+    CHECK_EQUALS(ble.gap().getAdvertisingParams().getInterval(), interval_value);
 
     ble.gap().setAdvertisingTimeout(0);
     CHECK_EQUALS(ble.gap().getAdvertisingParams().getTimeout(), 0);
@@ -61,28 +162,32 @@ void setupIBeaconTest(void)
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
 }
+
 /**
-* Test for setting and getting MAC address
-*/
+ * Test for setting and getting MAC address
+ */
 void setAddrTest(void)
 {
     Gap::AddressType_t addressType;
-    Gap::Address_t origAddress;
+    Gap::Address_t     origAddress;
     ble.gap().getAddress(&addressType, origAddress);
 
     const static Gap::Address_t newAddress = {110, 100, 100, 100, 100, 100}; /* A randomly chosen address for assigning to the peripheral. */
     ASSERT_NO_FAILURE(ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, newAddress));
+
     Gap::Address_t fetchedAddress;
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, fetchedAddress));
+
     printf("ASSERTIONS DONE\r\n");
     printf("%d:%d:%d:%d:%d:%d\n", newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5]);
     printf("%d:%d:%d:%d:%d:%d\n", fetchedAddress[0], fetchedAddress[1], fetchedAddress[2], fetchedAddress[3], fetchedAddress[4], fetchedAddress[5]);
 
     ble.gap().setAddress(Gap::ADDR_TYPE_PUBLIC, origAddress);
 }
+
 /**
-* Test to change advertisement interval
-*/
+ * Test to change advertisement interval
+ */
 void changeIntervalTest(void)
 {
     ble.gap().setAdvertisingTimeout(0);
@@ -92,11 +197,10 @@ void changeIntervalTest(void)
 }
 
 /**
-* Test to change advertisement payload
-*/
+ * Test to change advertisement payload
+ */
 void changePayloadTest(void)
 {
-
     ble.gap().clearAdvertisingPayload();
     ble.gap().setAdvertisingTimeout(0);
 
@@ -113,8 +217,8 @@ void changePayloadTest(void)
 }
 
 /**
-* Test to change add a scan response
-*/
+ * Test to change add a scan response
+ */
 void responseTest(void)
 {
     ble.gap().clearAdvertisingPayload();
@@ -134,8 +238,8 @@ void responseTest(void)
 }
 
 /**
-* Test to change advertisement timeout.
-*/
+ * Test to change advertisement timeout.
+ */
 void setTimeoutTest(void)
 {
     ble.gap().clearAdvertisingPayload();
@@ -147,22 +251,7 @@ void setTimeoutTest(void)
 }
 
 /**
-* Reset function run after every test
-*/
-void resetStateForNextTest(void)
-{
-    ble.gap().stopAdvertising();
-    ble.gap().clearAdvertisingPayload();
-    ble.gap().clearScanResponse();
-    ble.gap().setAdvertisingTimeout(0);
-    ble.gap().setAdvertisingInterval(1000);
-
-    const static uint8_t trivialAdvPayload[] = {0, 0, 0, 0, 0};
-    ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::SERVICE_DATA, trivialAdvPayload, sizeof(trivialAdvPayload));
-}
-
-/**
- * Test of the ble shutdown function. Reinitialises and makes sure it  
+ * Test of the ble shutdown function. Reinitializes and makes sure it
  */
 void shutdownTest(void)
 {
@@ -170,66 +259,6 @@ void shutdownTest(void)
     ASSERT_NO_FAILURE(ble.init());
     ASSERT_NO_FAILURE(ble.gap().startAdvertising());
     printf("ASSERTIONS DONE\r\n");
-}
-
-/**
- * Returns a pointer to the test function wanting to run. Sets up a table which maps strings to functions. 
- */
-funcPtr getTest(){
-
-    struct DispatchTableEntry {
-        const char * command;
-        void (* handler)(void);
-    };
-
-    const DispatchTableEntry table[] = {
-        {
-            "1", resetStateForNextTest
-        },
-        {
-            "setAddr", setAddrTest
-        },
-        {
-            "changeInterval", changeIntervalTest
-        },
-        {
-            "changePayload", changePayloadTest
-        },
-        {
-            "setTimeout", setTimeoutTest
-        },
-        {
-            "response", responseTest
-        },
-        {
-            "shutdown", shutdownTest
-        },
-        {
-            "detect", setupIBeaconTest
-        }
-    };
-
-    // Checks to see if the inputted string matches an entry in the table 
-    unsigned arraySize = sizeof(table)/sizeof(DispatchTableEntry);
-    for (unsigned i = 0; i < arraySize; i++){
-        if (!strcmp((const char*)buffer, table[i].command)){
-            return table[i].handler;
-        }
-    }
-    return NULL;
-}
-
-/**
- * If there is a test, will get reset the buffer and run the test
- */
-void commandInterpreter(void)
-{
-    funcPtr test = getTest();
-    if (test){
-        bufferIndex = 0;
-        memset(buffer, 0, strlen((char*)buffer));
-        test();
-    }
 }
 
 /**
@@ -256,24 +285,12 @@ unsigned verifyBasicAssumptions()
         printf("{{failure}} ble.gap().getState() at line %u\r\n", __LINE__); /* writing out {{failure}} will halt the host test runner. */
         return 1;
     }
-    
+
     const char *version = ble.getVersion();
     printf("%s\r\n", version);
 
     printf("{{success}}\r\n");
     return 0;
-}
-
-/**
- * handler for the serial interrupt, ignores \r and \n characters 
- */
-void serialHandler(void)
-{
-    char input = console.getc();
-    if (input != '\n' && input != '\r'){
-        buffer[bufferIndex++] = input;
-    }
-    commandInterpreter();
 }
 
 void app_start(int, char*[])
@@ -297,17 +314,17 @@ void app_start(int, char*[])
     ASSERT_NO_FAILURE(ble.gap().getAddress(&addressType, address));
     printf("%d:%d:%d:%d:%d:%d\n", address[0], address[1], address[2], address[3], address[4], address[5]); /* sends the MAC address to the host PC. */
 
+    /* Setup console input handler to allow command interpretation. */
     console.attach(serialHandler);
-    
-    commandInterpreter();
 }
 
-#if !defined(YOTTA_MINAR_VERSION_STRING)
-
+/**
+ * main() is needed only for mbed-classic. mbed OS triggers app_start() automatically.
+ */
+#ifndef YOTTA_CFG_MBED_OS
 int main(void)
 {
     app_start(0, NULL);
     return 0;
 }
-
 #endif
