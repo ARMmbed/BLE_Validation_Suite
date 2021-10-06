@@ -1,3 +1,7 @@
+## Deprecation note!
+
+**Please note: This repository is deprecated and it is no longer actively maintained**.
+
 # Description
 A validation suite to test the BLE_API functionality of devices. 
 
